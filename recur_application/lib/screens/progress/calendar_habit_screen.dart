@@ -2,131 +2,234 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarProgressScreen extends StatefulWidget {
+  final String selectedFilter; // Selected filter to apply (e.g., "All", "Meditate", "Morning Routine")
+
+  CalendarProgressScreen({
+    Key? key,
+    required this.selectedFilter,
+  }) : super(key: key);
+
   @override
   _CalendarProgressScreenState createState() => _CalendarProgressScreenState();
 }
 
 class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
-  late DateTime _focusedDay;
-  late DateTime _selectedDay;
+  DateTime _focusedDay = DateTime.now(); // Currently focused month
+  DateTime? _selectedDay; // Selected day in the calendar
 
-  // Dummy podatki o napredku za vsak dan v mesecu (dodajte več dni po potrebi)
-  final Map<DateTime, int> dailyProgress = {
-    DateTime(2024, 12, 1): 100, // 100% completed (green)
-    DateTime(2024, 12, 2): 50,  // 50% completed (yellow)
-    DateTime(2024, 12, 3): 0,   // 0% completed (red)
-    DateTime(2024, 12, 4): 80,  // 80% completed (yellow)
-    DateTime(2024, 12, 5): 100, // 100% completed (green)
-    DateTime(2024, 12, 6): 100, // 100% completed (green)
-    DateTime(2024, 12, 7): 20,  // 20% completed (yellow)
-    DateTime(2024, 12, 8): 0,   // 0% completed (red)
-    DateTime(2024, 12, 9): 90,  // 90% completed (yellow)
-    DateTime(2024, 12, 10): 30, // 30% completed (yellow)
+  // Hardcoded habit completion data
+  final Map<DateTime, bool?> habitCompletion = {
+    _normalizeDate(DateTime(2024, 12, 1)): true,
+    _normalizeDate(DateTime(2024, 12, 2)): false,
+    _normalizeDate(DateTime(2024, 12, 3)): true,
+    _normalizeDate(DateTime(2024, 12, 5)): true,
+    _normalizeDate(DateTime(2024, 12, 6)): false,
+    _normalizeDate(DateTime(2024, 12, 8)): true,
+    _normalizeDate(DateTime(2024, 12, 10)): false,
   };
 
-  @override
-  void initState() {
-    super.initState();
-    _focusedDay = DateTime.now();
-    _selectedDay = DateTime.now();
+  // Normalize a DateTime to only include the date (no time)
+  static DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
-  // Funkcija za pridobivanje barve glede na napredek
-  Color getDayColor(DateTime day) {
-    if (dailyProgress.containsKey(day)) {
-      int progress = dailyProgress[day]!;
-      if (progress == 100) {
-        return Colors.green; // Zeleni
-      } else if (progress > 0 && progress < 100) {
-        return Colors.yellow; // Rumeni
-      } else {
-        return Colors.red; // Rdeči
-      }
+  Map<DateTime, bool?> _getFilteredHabitCompletion() {
+    if (widget.selectedFilter == "All") {
+      return habitCompletion;
     }
-    return Colors.white; // Dnevi brez napredka
+
+    // Example: Add filter logic for specific categories
+    // For simplicity, this example does not differentiate habit data by filter.
+    // Replace this with real filtering logic based on widget.selectedFilter.
+    return habitCompletion; // In practice, filter this map based on widget.selectedFilter.
   }
 
   @override
   Widget build(BuildContext context) {
+    final filteredHabitCompletion = _getFilteredHabitCompletion();
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Monthly Summary"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-      ),
       body: Column(
         children: [
-          // Table Calendar
+          Text(
+            "Habit tracking",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          // Calendar
           TableCalendar(
-            firstDay: DateTime.utc(2024, 1, 1),
-            lastDay: DateTime.utc(2024, 12, 31),
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            selectedDayPredicate: (day) {
+              return isSameDay(_selectedDay, day);
+            },
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
               });
             },
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-            ),
-            eventLoader: (day) {
-              if (dailyProgress.containsKey(day)) {
-                int progress = dailyProgress[day]!;
-                if (progress == 100) {
-                  return [Colors.green]; // Zeleni
-                } else if (progress > 0 && progress < 100) {
-                  return [Colors.yellow]; // Rumeni
-                } else {
-                  return [Colors.red]; // Rdeči
-                }
-              } else {
-                return [];
-              }
-            },
             calendarBuilders: CalendarBuilders(
-              // Dodajemo obarvanost za vsak dan glede na napredek
               defaultBuilder: (context, day, focusedDay) {
-                return Container(
-                  margin: const EdgeInsets.all(4.0),
-                  decoration: BoxDecoration(
-                    color: getDayColor(day), // Uporabimo barvo glede na napredek
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(child: Text("${day.day}")),
-                );
+                DateTime normalizedDay = _normalizeDate(day);
+                if (filteredHabitCompletion.containsKey(normalizedDay)) {
+                  bool? isCompleted = filteredHabitCompletion[normalizedDay];
+                  return Container(
+                    margin: const EdgeInsets.all(6.0),
+                    decoration: BoxDecoration(
+                      color: isCompleted == true
+                          ? Colors.green
+                          : isCompleted == false
+                              ? Colors.red
+                              : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }
+                return null;
               },
             ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
           ),
-          SizedBox(height: 20),
-          // Napredek za izbran mesec
+
+          // Selected Day Summary
+          if (_selectedDay != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildSelectedDaySummary(filteredHabitCompletion),
+            ),
+          ],
+
+          Spacer(),
+
+          // Monthly Summary
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4.0,
+                    spreadRadius: 2.0,
+                  ),
+                ],
               ),
-              child: ListTile(
-                title: Text("Progress for ${_selectedDay.toLocal()}"),
-                subtitle: Text(
-                    "Completed: ${dailyProgress[_selectedDay] ?? 0}%"),
-                leading: Icon(Icons.calendar_today, color: Colors.blue),
+              child: Column(
+                children: [
+                  Text(
+                    'Monthly Summary (${widget.selectedFilter})',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildSummaryStat(
+                        icon: Icons.check_circle,
+                        label: '${_fullyCompletedDays(filteredHabitCompletion)} Days Completed',
+                        color: Colors.green,
+                      ),
+                      _buildSummaryStat(
+                        icon: Icons.error,
+                        label: '${filteredHabitCompletion.length - _fullyCompletedDays(filteredHabitCompletion)} Days Incomplete',
+                        color: Colors.red,
+                      ),
+                      _buildSummaryStat(
+                        icon: Icons.percent,
+                        label: '${_calculateCompletionRate(filteredHabitCompletion)}% Done',
+                        color: Colors.blue,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildSelectedDaySummary(Map<DateTime, bool?> filteredHabitCompletion) {
+    DateTime normalizedSelectedDay = _normalizeDate(_selectedDay!);
+    bool? status = filteredHabitCompletion[normalizedSelectedDay];
+    String statusText = status == true
+        ? "Habit Completed"
+        : status == false
+            ? "Habit Not Completed"
+            : "No Habit Scheduled";
+
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Selected Day: ${_formatDate(normalizedSelectedDay)}",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          SizedBox(height: 8),
+          Text(
+            statusText,
+            style: TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryStat({required IconData icon, required String label, required Color color}) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 32),
+        SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return "${date.day} ${months[date.month - 1]}";
+  }
+
+  int _fullyCompletedDays(Map<DateTime, bool?> habitCompletion) {
+    return habitCompletion.values.where((value) => value == true).length;
+  }
+
+  int _calculateCompletionRate(Map<DateTime, bool?> habitCompletion) {
+    int completed = habitCompletion.values.where((value) => value == true).length;
+    int totalScheduled = habitCompletion.values.where((value) => value != null).length;
+
+    if (totalScheduled == 0) return 0;
+    return ((completed / totalScheduled) * 100).round();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:recur_application/screens/progress/progress_screen.dart';
 import 'bottom_navigation_bar.dart';
 import 'custom_floating_button.dart';
+import 'add_habit_screen.dart';
 
 class HabitsScreen extends StatefulWidget {
   @override
@@ -199,8 +200,10 @@ class _HabitsScreenState extends State<HabitsScreen> {
       floatingActionButton: CustomFloatingButton(
         icon: Icons.add,
         onPressed: () {
-          // Logika za dodajanje habitov
-          print("Floating Action Button Clicked");
+         Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => AddHabitScreen()),
+        );
         },
         backgroundColor: Colors.teal, // Barva gumba
         iconColor: Colors.white, // Barva ikone

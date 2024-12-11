@@ -1,28 +1,18 @@
 import 'package:flutter/material.dart';
 
 class OverallProgressScreen extends StatelessWidget {
-  final int currentPageIndex; // Dodaj trenutni indeks strani
-
-  OverallProgressScreen({required this.currentPageIndex});
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(height: 16),
-        // Filter Buttons (All, Meditate, Morning Routine)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            FilterButton(label: "All", isActive: true, color: Colors.green),
-            FilterButton(label: "Meditate", isActive: false, color: Colors.yellow),
-            FilterButton(label: "Morning Routine", isActive: false, color: Colors.blue),
-          ],
+        Text(
+          "Dashboard",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        SizedBox(height: 24),
+        SizedBox(height: 16),
         // Circular Progress Bar
-        CircularProgressIndicatorWithLabel(percentage: 50),
+        CircularProgressIndicatorWithLabel(percentage: 50, description: ""),
         SizedBox(height: 24),
         // Status Summary (Completed, Streak, Not Done)
         Padding(
@@ -100,60 +90,12 @@ class OverallProgressScreen extends StatelessWidget {
               child: Text(
                 "“Keep up the great work!”",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                textAlign: TextAlign.center,
               ),
             ),
           ),
         ),
-        SizedBox(height: 24),
-        // Page Indicator
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(3, (index) {
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              margin: EdgeInsets.symmetric(horizontal: 4),
-              height: 10,
-              width: currentPageIndex == index ? 12 : 8,
-              decoration: BoxDecoration(
-                color: currentPageIndex == index ? Colors.teal : Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-            );
-          }),
-        ),
-        SizedBox(height: 24),
       ],
-    );
-  }
-}
-
-// Custom Filter Button Widget
-class FilterButton extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final Color color;
-
-  FilterButton({
-    required this.label,
-    required this.isActive,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isActive ? color : Colors.grey[200],
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? Colors.white : Colors.black,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
   }
 }
@@ -161,27 +103,37 @@ class FilterButton extends StatelessWidget {
 // Custom Circular Progress Indicator
 class CircularProgressIndicatorWithLabel extends StatelessWidget {
   final int percentage;
+  final String description;
 
-  CircularProgressIndicatorWithLabel({required this.percentage});
+  CircularProgressIndicatorWithLabel({required this.percentage, required this.description});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
+    return Column(
       children: [
-        SizedBox(
-          height: 120,
-          width: 120,
-          child: CircularProgressIndicator(
-            value: percentage / 100,
-            strokeWidth: 8.0,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-          ),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              height: 120,
+              width: 120,
+              child: CircularProgressIndicator(
+                value: percentage / 100,
+                strokeWidth: 8.0,
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            ),
+            Text(
+              "$percentage%",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
+        SizedBox(height: 8),
         Text(
-          "$percentage%",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          description,
+          style: TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ],
     );

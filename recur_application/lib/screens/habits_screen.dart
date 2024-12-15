@@ -11,42 +11,36 @@ class HabitsScreen extends StatefulWidget {
 
 class _HabitsScreenState extends State<HabitsScreen> {
   DateTime today = DateTime.now();
-  late DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1)); // Prvi dan tedna
+  late DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1)); // First day of the week
 
   int currentIndex = 0; // For bottom navigation
 
   void _onNavBarTap(int index) {
     if (index == 0) {
-    setState(() {
-      currentIndex = 0; // Ostani na Home
-    });
-  } else if (index == 1) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ProgressScreenMain()),
-    );
-  } else if (index == 2) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder za Challenges
-    );
-  } else if (index == 3) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder za Settings
-    );
-  }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    startOfWeek = today.subtract(Duration(days: today.weekday - 1)); // Prvi dan tedna
+      setState(() {
+        currentIndex = 0; // Stay on Home
+      });
+    } else if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProgressScreenMain()),
+      );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder for Challenges
+      );
+    } else if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder for Settings
+      );
+    }
   }
 
   void _moveWeek(int days) {
     setState(() {
-      startOfWeek = startOfWeek.add(Duration(days: days)); // Premik tedna
+      startOfWeek = startOfWeek.add(Duration(days: days)); // Move week
     });
   }
 
@@ -57,10 +51,10 @@ class _HabitsScreenState extends State<HabitsScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final weekDates = _generateWeekDates();
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,6 +65,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,14 +73,14 @@ class _HabitsScreenState extends State<HabitsScreen> {
           // Date Selector
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            color: Colors.grey[100], // Ozadje za boljši kontrast
+            color: Colors.grey[100],
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_left, size: 30),
                   onPressed: () {
-                    _moveWeek(-7); // Premik za en teden nazaj
+                    _moveWeek(-7);
                   },
                 ),
                 Expanded(
@@ -131,68 +126,122 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 IconButton(
                   icon: Icon(Icons.arrow_right, size: 30),
                   onPressed: () {
-                    _moveWeek(7); // Premik za en teden naprej
+                    _moveWeek(7);
                   },
                 ),
               ],
             ),
           ),
           SizedBox(height: 10),
-          // Ongoing Habits
+
+          // Unified Habits Section
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ListView(
-                children: [
-                  Text(
-                    "Ongoing Habits",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  SizedBox(height: 10),
-                  _buildHabitCard(
-                      title: "Drink Water",
-                      subtitle: "Goal: 2L",
-                      progress: 0.45,
-                      icon: Icons.local_drink),
-                  _buildHabitCard(
-                      title: "Read Book",
-                      subtitle: "Goal: 30 mins",
-                      progress: 0.30,
-                      icon: Icons.book),
-                  SizedBox(height: 20),
-                  Text(
-                    "Completed Habits",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  SizedBox(height: 10),
-                  _buildHabitCard(
-                      title: "Morning Run",
-                      subtitle: "Goal: 5 km",
-                      progress: 1.0,
-                      icon: Icons.directions_run,
-                      isCompleted: true),
-                  SizedBox(height: 20),
-                  Text(
-                    "Failed Habits",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  SizedBox(height: 10),
-                  _buildHabitCard(
-                      title: "Go for a Walk",
-                      subtitle: "Missed",
-                      progress: 0.0,
-                      icon: Icons.directions_walk,
-                      isFailed: true),
-                ],
-              ),
+            child: SingleChildScrollView(
+              child: isLandscape
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildHabitSection(
+                            title: "Ongoing Habits",
+                            habitCards: [
+                              _buildHabitCard(
+                                title: "Drink Water",
+                                subtitle: "Goal: 2L",
+                                progress: 0.45,
+                                icon: Icons.local_drink,
+                              ),
+                              _buildHabitCard(
+                                title: "Read Book",
+                                subtitle: "Goal: 30 mins",
+                                progress: 0.30,
+                                icon: Icons.book,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHabitSection(
+                                title: "Completed Habits",
+                                habitCards: [
+                                  _buildHabitCard(
+                                    title: "Morning Run",
+                                    subtitle: "Goal: 5 km",
+                                    progress: 1.0,
+                                    icon: Icons.directions_run,
+                                    isCompleted: true,
+                                  ),
+                                ],
+                              ),
+                              _buildHabitSection(
+                                title: "Failed Habits",
+                                habitCards: [
+                                  _buildHabitCard(
+                                    title: "Go for a Walk",
+                                    subtitle: "Missed",
+                                    progress: 0.0,
+                                    icon: Icons.directions_walk,
+                                    isFailed: true,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _buildHabitSection(
+                          title: "Ongoing Habits",
+                          habitCards: [
+                            _buildHabitCard(
+                              title: "Drink Water",
+                              subtitle: "Goal: 2L",
+                              progress: 0.45,
+                              icon: Icons.local_drink,
+                            ),
+                            _buildHabitCard(
+                              title: "Read Book",
+                              subtitle: "Goal: 30 mins",
+                              progress: 0.30,
+                              icon: Icons.book,
+                            ),
+                          ],
+                        ),
+                        _buildHabitSection(
+                          title: "Completed Habits",
+                          habitCards: [
+                            _buildHabitCard(
+                              title: "Morning Run",
+                              subtitle: "Goal: 5 km",
+                              progress: 1.0,
+                              icon: Icons.directions_run,
+                              isCompleted: true,
+                            ),
+                          ],
+                        ),
+                        _buildHabitSection(
+                          title: "Failed Habits",
+                          habitCards: [
+                            _buildHabitCard(
+                              title: "Go for a Walk",
+                              subtitle: "Missed",
+                              progress: 0.0,
+                              icon: Icons.directions_walk,
+                              isFailed: true,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
           ),
         ],
       ),
-      // Bottom Navigation
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: currentIndex,
         onTap: _onNavBarTap,
@@ -200,37 +249,39 @@ class _HabitsScreenState extends State<HabitsScreen> {
       floatingActionButton: CustomFloatingButton(
         icon: Icons.add,
         onPressed: () {
-         Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => AddHabitScreen()),
-        );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddHabitScreen()),
+          );
         },
-        backgroundColor: Colors.teal, // Barva gumba
-        iconColor: Colors.white, // Barva ikone
+        backgroundColor: Colors.teal,
+        iconColor: Colors.white,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
   String _getWeekdayName(int weekday) {
-    switch (weekday) {
-      case 1:
-        return 'Mon';
-      case 2:
-        return 'Tue';
-      case 3:
-        return 'Wed';
-      case 4:
-        return 'Thu';
-      case 5:
-        return 'Fri';
-      case 6:
-        return 'Sat';
-      case 7:
-        return 'Sun';
-      default:
-        return '';
-    }
+    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
+  }
+
+  Widget _buildHabitSection({
+    required String title,
+    required List<Widget> habitCards,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+        ),
+        ...habitCards,
+      ],
+    );
   }
 
   Widget _buildHabitCard({
@@ -242,42 +293,40 @@ class _HabitsScreenState extends State<HabitsScreen> {
     bool isFailed = false,
   }) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isCompleted
-                  ? Colors.green
-                  : isFailed
-                      ? Colors.red
-                      : Colors.blue,
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(subtitle),
-                ],
-              ),
-            ),
-            isCompleted
-                ? Icon(Icons.check, color: Colors.green)
-                : isFailed
-                    ? Icon(Icons.close, color: Colors.red)
-                    : SizedBox(
-                        width: 100,
-                        child: LinearProgressIndicator(
-                          value: progress.clamp(0.0, 1.0),
-                          backgroundColor: Colors.grey[300],
-                          color: Colors.blue,
-                        ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        leading: Icon(icon, color: isCompleted ? Colors.green : isFailed ? Colors.red : Colors.blue),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
+        trailing: isCompleted
+            ? Icon(Icons.check, color: Colors.green)
+            : isFailed
+                ? Icon(Icons.close, color: Colors.red)
+                : SizedBox(
+                width: 100,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: progress.clamp(0.0, 1.0),
+                        backgroundColor: Colors.grey[300],
+                        color: Colors.blue,
+                        minHeight: 6,
                       ),
-          ],
-        ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '${(progress * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/habits_screen.dart';
 import 'screens/progress/progress_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Omogoči asinhrono inicializacijo
+  await Firebase.initializeApp(); // Inicializacija Firebase
   runApp(const MainApp());
 }
 

@@ -16,9 +16,9 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
   String selectedFilter = "All"; // Currently selected filter
 
   final List<Map<String, dynamic>> filters = [
-    {"label": "All", "isSelected": true},
-    {"label": "Meditate", "isSelected": false},
-    {"label": "Morning Routine", "isSelected": false},
+    {"label": "All", "isSelected": true, "color": Colors.green.shade400},
+    {"label": "Meditate", "isSelected": false, "color": Colors.yellow.shade300},
+    {"label": "Morning Routine", "isSelected": false, "color": Colors.blue.shade200},
   ];
 
   void navigateToPage(int navBarIndex) {
@@ -53,6 +53,7 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
@@ -62,23 +63,31 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: filters
-                  .map((filter) => FilterChip(
-                        label: Text(
-                          filter['label'],
-                          style: TextStyle(
-                            color: filter['isSelected'] ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        selected: filter['isSelected'],
-                        selectedColor: Colors.green,
-                        onSelected: (isSelected) {
+                  .map((filter) => GestureDetector(
+                        onTap: () {
                           setState(() {
                             // Update selected filter
                             filters.forEach((f) => f['isSelected'] = false);
-                            filter['isSelected'] = isSelected;
+                            filter['isSelected'] = true;
                             selectedFilter = filter['label'];
                           });
                         },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: Text(
+                            filter['label'],
+                            style: TextStyle(
+                              color: filter['isSelected']
+                                  ? Colors.black // Black for selected filter
+                                  : Colors.grey[700], // Dark gray for unselected filters
+                              fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ))
                   .toList(),
             ),

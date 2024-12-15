@@ -8,8 +8,12 @@ class AddHabitScreen extends StatefulWidget {
 class _AddHabitScreenState extends State<AddHabitScreen> {
   final TextEditingController habitNameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  String selectedFrequency = 'Daily'; // Privzeta vrednost za pogostost
-  String selectedType = 'Morning routine'; // Privzeta vrednost za tip
+  final TextEditingController goalController = TextEditingController();
+  TimeOfDay? selectedReminderTime;
+  String selectedFrequency = 'Daily'; // Default frequency
+  String selectedType = 'Morning routine'; // Default type
+  IconData? selectedIcon; // Selected icon for the habit
+
   final List<String> frequencies = ['Daily', 'Weekly', 'Monthly'];
   final List<String> types = [
     'Morning routine',
@@ -18,6 +22,30 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     'Leisure',
     'Other'
   ];
+
+  // Predefined icons for selection
+  final List<IconData> habitIcons = [
+    Icons.fitness_center,
+    Icons.local_drink,
+    Icons.book,
+    Icons.directions_run,
+    Icons.work,
+    Icons.music_note,
+    Icons.brush,
+  ];
+
+  // Function to open the TimePicker
+  Future<void> _selectReminderTime() async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (pickedTime != null) {
+      setState(() {
+        selectedReminderTime = pickedTime;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +66,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
           child: SingleChildScrollView(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Ozadje obrazca
-                borderRadius: BorderRadius.circular(16.0), // Zaobljeni robovi
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1), // Rahla senca
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    offset: Offset(0, 5), // Položaj sence
+                    offset: Offset(0, 5),
                   ),
                 ],
               ),
@@ -52,7 +80,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Vnos za ime navade
+                  // Habit Name
                   Text(
                     "Habit Name",
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -68,7 +96,8 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  // Vnos za opis navade
+
+                  // Description
                   Text(
                     "Description",
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -84,7 +113,25 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  // Izbira frekvence
+
+                  // Goal
+                  Text(
+                    "Goal",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: goalController,
+                    decoration: InputDecoration(
+                      hintText: "Enter your goal (e.g., 2L, 30 mins)",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Frequency
                   Text(
                     "Frequency",
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -110,7 +157,8 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  // Izbira tipa navade
+
+                  // Type
                   Text(
                     "Type",
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -136,44 +184,88 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  // Vnos za čas opomnika
+
+                  // Reminder Time
                   Text(
                     "Reminder Time",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "Enter reminder time",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                  GestureDetector(
+                    onTap: _selectReminderTime,
+                    child: TextField(
+                      readOnly: true,
+                      onTap: _selectReminderTime,
+                      decoration: InputDecoration(
+                        hintText: selectedReminderTime != null
+                            ? selectedReminderTime!.format(context)
+                            : "Select reminder time",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
                       ),
                     ),
-                    keyboardType: TextInputType.datetime,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Icon Selection
+                  Text(
+                    "Habit Icon",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: habitIcons.map((icon) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedIcon = icon;
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: selectedIcon == icon
+                                ? Colors.teal
+                                : Colors.grey[200],
+                            shape: BoxShape.circle,
+                          ),
+                          padding: EdgeInsets.all(12.0),
+                          child: Icon(
+                            icon,
+                            color: selectedIcon == icon
+                                ? Colors.white
+                                : Colors.grey[800],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                   SizedBox(height: 24),
-                  // Gumb za shranjevanje navade
+
+                  // Save Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Logika za shranjevanje navade
+                        // Save Habit Logic
                         print("Habit Name: ${habitNameController.text}");
                         print("Description: ${descriptionController.text}");
+                        print("Goal: ${goalController.text}");
                         print("Frequency: $selectedFrequency");
                         print("Type: $selectedType");
+                        print("Selected Icon: $selectedIcon");
+                        print("Reminder Time: ${selectedReminderTime?.format(context)}");
 
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal, // Barva gumba
-                        foregroundColor: Colors.white, // Barva besedila
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
-                        padding: EdgeInsets.symmetric(
-                          vertical: 12.0, // Višina gumba
-                        ),
+                        padding: EdgeInsets.symmetric(vertical: 14.0),
                       ),
                       child: Text(
                         "Save Habit",

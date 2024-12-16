@@ -43,30 +43,55 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   }
 
   Future<void> _addIntake(double intake) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('habits')
-          .doc(widget.habitId)
-          .update({
-        'intakes': FieldValue.arrayUnion([
-          {
-            'time': DateTime.now(),
-            'value': intake,
-          }
-        ]),
-      });
+  try {
+    // Preberi obstoječe podatke za habit
+    DocumentSnapshot habitSnapshot = await FirebaseFirestore.instance
+        .collection('habits')
+        .doc(widget.habitId)
+        .get();
 
-      // Po dodajanju osveži podatke
-      _fetchHabitDetails();
-      intakeController.clear();
-    } catch (e) {
-      print("Error adding intake: $e");
-    }
-  }
+    // Pridobi podatke iz baze
+    final data = habitSnapshot.data() as Map<String, dynamic>;
+    final List<dynamic> intakes = data['intakes'] ?? [];
+    final String goalString = data['goal'] ?? '0';
+    final double goal = double.tryParse(goalString) ?? 0.0;
 
-  double _calculateTotalIntake(List<dynamic> intakes) {
-    return intakes.fold(0.0, (sum, intake) => sum + (intake['value'] ?? 0.0));
+    // Dodaj nov vnos
+    intakes.add({
+      'time': Timestamp.now(),
+      'value': intake,
+    });
+
+    // Izračunaj skupni vnos
+    double totalIntake = intakes.fold(0.0, (sum, entry) => sum + (entry['value'] ?? 0.0));
+
+    // Izračunaj progress (procentualno)
+    double progress = (goal > 0) ? totalIntake / goal : 0.0;
+
+    // Posodobi habit v Firestore
+    await FirebaseFirestore.instance
+        .collection('habits')
+        .doc(widget.habitId)
+        .update({
+      'intakes': intakes,        // Posodobljena lista vnosov
+      'progress': progress,      // Dinamično izračunan progress
+    });
+
+    // Osveži podatke in počisti vnosno polje
+    _fetchHabitDetails();
+    intakeController.clear();
+
+    // Obvestilo uporabniku
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Intake successfully added and progress updated!")),
+    );
+  } catch (e) {
+    print("Error adding intake: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to add intake! Please try again.")),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -78,12 +103,15 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
 
     final data = habitData.data() as Map<String, dynamic>;
     final String name = data['name'] ?? 'Unnamed Habit';
-    final String goal = data['goal'] ?? '0';
+    final String goal = data['goal'] ?? '0'; // Ciljna vrednost kot string
+    final String unit = data['unit'] ?? ''; // Unit iz baze
     final List<dynamic> intakes = data['intakes'] ?? [];
-    final double totalIntake = _calculateTotalIntake(intakes);
-    final double goalValue =
-        double.tryParse(goal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
-    final double progress = (goalValue > 0) ? totalIntake / goalValue : 0.0;
+    final double totalIntake = intakes.fold(0.0, (sum, intake) => sum + (intake['value'] ?? 0.0));
+
+    // Funkcija za formatiranje vnosa in cilja z enoto, če je "Custom"
+    String formatWithUnit(String value, String unit) {
+      return unit == 'Custom' ? "$value $unit" : value;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -101,29 +129,25 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
             children: [
               // Progress Circle
               CircularProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
+                value: (goal != '0' && totalIntake > 0)
+                    ? (totalIntake / double.tryParse(goal.replaceAll(RegExp(r'[^\d.]'), ''))!)
+                        .clamp(0.0, 1.0)
+                    : 0.0,
                 strokeWidth: 12,
                 backgroundColor: Colors.grey[300],
                 color: Colors.yellow[700],
               ),
               SizedBox(height: 10),
               Text(
-                "${(progress * 100).toStringAsFixed(0)}%",
+                "${(goal != '0' ? ((totalIntake / double.tryParse(goal.replaceAll(RegExp(r'[^\d.]'), ''))!) * 100).toStringAsFixed(0) : '0')}%",
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
                     color: Colors.yellow[800]),
               ),
               Text(
-                "${totalIntake.toStringAsFixed(1)}L / ${goalValue}L",
+                "${formatWithUnit(totalIntake.toStringAsFixed(1), unit)} / ${formatWithUnit(goal, unit)}",
                 style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-              ),
-              SizedBox(height: 20),
-
-              // Streak Info
-              Text(
-                "10-Day Streak! Great job!",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
 
@@ -137,13 +161,11 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               ),
               ...intakes.map((intake) {
                 final DateTime time = (intake['time'] as Timestamp).toDate();
-                final String value = intake['value'].toString();
+                final String value = formatWithUnit(intake['value'].toString(), unit);
                 return ListTile(
                   title: Text(
-                    "${time.hour}:${time.minute.toString().padLeft(2, '0')} - $value mL",
+                    "${time.hour}:${time.minute.toString().padLeft(2, '0')} - $value",
                   ),
-                  trailing: Icon(Icons.delete, color: Colors.red),
-                  onTap: () {}, // Add delete functionality if needed
                 );
               }).toList(),
 
@@ -157,7 +179,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                       controller: intakeController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        hintText: "Enter intake (e.g., 500 mL)",
+                        hintText: "Enter intake (e.g., ${unit == 'Custom' ? '500 $unit' : '10'})",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

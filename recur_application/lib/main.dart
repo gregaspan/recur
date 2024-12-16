@@ -5,7 +5,16 @@ import 'screens/progress/progress_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Omogoči asinhrono inicializacijo
-  await Firebase.initializeApp(); // Inicializacija Firebase
+
+  // Firebase inicializacija z obravnavo morebitnih napak
+   try {
+    await Firebase.initializeApp();
+    print("Firebase successfully initialized!");
+  } catch (e, stacktrace) {
+    print("Error initializing Firebase: $e");
+    print("Stacktrace: $stacktrace");
+  }
+
   runApp(const MainApp());
 }
 

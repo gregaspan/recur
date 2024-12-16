@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddHabitScreen extends StatefulWidget {
   @override
@@ -47,6 +48,54 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     }
   }
 
+  // Function to save habit to Firestore
+  Future<void> _saveHabit() async {
+    String habitName = habitNameController.text.trim();
+    String description = descriptionController.text.trim();
+    String goal = goalController.text.trim();
+    String frequency = selectedFrequency;
+    String type = selectedType;
+    String reminderTime = selectedReminderTime != null
+        ? selectedReminderTime!.format(context)
+        : "No reminder set";
+    IconData? icon = selectedIcon;
+
+    if (habitName.isEmpty) {
+      // Validate habit name
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Habit name cannot be empty!")),
+      );
+      return;
+    }
+
+    try {
+      // Add to Firestore collection
+      await FirebaseFirestore.instance.collection('habits').add({
+        'name': habitName,
+        'description': description,
+        'goal': goal,
+        'frequency': frequency,
+        'type': type,
+        'reminderTime': reminderTime,
+        'icon': icon != null ? icon.codePoint : null, // Save icon Unicode
+        'createdAt': Timestamp.now(),
+      });
+
+      // Success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Habit successfully added!")),
+      );
+
+      // Close the screen
+      Navigator.pop(context);
+    } catch (e) {
+      print("Error saving habit: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to save habit!")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,61 +130,43 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Habit Name
-                  Text(
-                    "Habit Name",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Habit Name", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   TextField(
                     controller: habitNameController,
                     decoration: InputDecoration(
                       hintText: "Enter habit name",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Description
-                  Text(
-                    "Description",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Description", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   TextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
                       hintText: "Add a short description (optional)",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Goal
-                  Text(
-                    "Goal",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Goal", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   TextField(
                     controller: goalController,
                     decoration: InputDecoration(
                       hintText: "Enter your goal (e.g., 2L, 30 mins)",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Frequency
-                  Text(
-                    "Frequency",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Frequency", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: selectedFrequency,
@@ -151,18 +182,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                       );
                     }).toList(),
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Type
-                  Text(
-                    "Type",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Type", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: selectedType,
@@ -178,18 +204,13 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                       );
                     }).toList(),
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Reminder Time
-                  Text(
-                    "Reminder Time",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Reminder Time", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   GestureDetector(
                     onTap: _selectReminderTime,
@@ -200,19 +221,14 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                         hintText: selectedReminderTime != null
                             ? selectedReminderTime!.format(context)
                             : "Select reminder time",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                       ),
                     ),
                   ),
                   SizedBox(height: 16),
 
                   // Icon Selection
-                  Text(
-                    "Habit Icon",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Habit Icon", style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -225,18 +241,14 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: selectedIcon == icon
-                                ? Colors.teal
-                                : Colors.grey[200],
+                            color: selectedIcon == icon ? Colors.teal : Colors.grey[200],
                             shape: BoxShape.circle,
                           ),
                           padding: EdgeInsets.all(12.0),
-                          child: Icon(
-                            icon,
-                            color: selectedIcon == icon
-                                ? Colors.white
-                                : Colors.grey[800],
-                          ),
+                          child: Icon(icon,
+                              color: selectedIcon == icon
+                                  ? Colors.white
+                                  : Colors.grey[800]),
                         ),
                       );
                     }).toList(),
@@ -247,33 +259,16 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Save Habit Logic
-                        print("Habit Name: ${habitNameController.text}");
-                        print("Description: ${descriptionController.text}");
-                        print("Goal: ${goalController.text}");
-                        print("Frequency: $selectedFrequency");
-                        print("Type: $selectedType");
-                        print("Selected Icon: $selectedIcon");
-                        print("Reminder Time: ${selectedReminderTime?.format(context)}");
-
-                        Navigator.pop(context);
-                      },
+                      onPressed: _saveHabit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 14.0),
                       ),
-                      child: Text(
-                        "Save Habit",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text("Save Habit",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

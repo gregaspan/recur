@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:recur_application/screens/progress/progress_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'bottom_navigation_bar.dart';
 import 'custom_floating_button.dart';
 import 'add_habit_screen.dart';
+import 'habit_detail_screen.dart';
 
 class HabitsScreen extends StatefulWidget {
   @override
@@ -14,6 +16,11 @@ class _HabitsScreenState extends State<HabitsScreen> {
   late DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1)); // First day of the week
 
   int currentIndex = 0; // For bottom navigation
+
+  Stream<QuerySnapshot> _fetchHabits() {
+    return FirebaseFirestore.instance.collection('habits').snapshots();
+  }
+
 
   void _onNavBarTap(int index) {
     if (index == 0) {
@@ -144,20 +151,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                         Expanded(
                           child: _buildHabitSection(
                             title: "Ongoing Habits",
-                            habitCards: [
-                              _buildHabitCard(
-                                title: "Drink Water",
-                                subtitle: "Goal: 2L",
-                                progress: 0.45,
-                                icon: Icons.local_drink,
-                              ),
-                              _buildHabitCard(
-                                title: "Read Book",
-                                subtitle: "Goal: 30 mins",
-                                progress: 0.30,
-                                icon: Icons.book,
-                              ),
-                            ],
+                            habitCards: [_buildOngoingHabits()],
                           ),
                         ),
                         Expanded(
@@ -197,20 +191,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                       children: [
                         _buildHabitSection(
                           title: "Ongoing Habits",
-                          habitCards: [
-                            _buildHabitCard(
-                              title: "Drink Water",
-                              subtitle: "Goal: 2L",
-                              progress: 0.45,
-                              icon: Icons.local_drink,
-                            ),
-                            _buildHabitCard(
-                              title: "Read Book",
-                              subtitle: "Goal: 30 mins",
-                              progress: 0.30,
-                              icon: Icons.book,
-                            ),
-                          ],
+                          habitCards: [_buildOngoingHabits()],
                         ),
                         _buildHabitSection(
                           title: "Completed Habits",
@@ -265,6 +246,69 @@ class _HabitsScreenState extends State<HabitsScreen> {
     return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
   }
 
+  Widget _buildOngoingHabits() {
+  return StreamBuilder<QuerySnapshot>(
+    stream: _fetchHabits(),
+    builder: (context, snapshot) {
+      List<Widget> habitCards = [];
+
+      // Hardcoded habits
+      habitCards.addAll([
+        _buildHabitCard(
+          title: "Drink Water",
+          subtitle: "Goal: 2L",
+          progress: 0.45,
+          icon: Icons.local_drink,
+          onTap: () {
+            // Navigate to details screen for hardcoded habit (optional handling)
+            print("Details for hardcoded habit: Drink Water");
+          },
+        ),
+        _buildHabitCard(
+          title: "Read Book",
+          subtitle: "Goal: 30 mins",
+          progress: 0.30,
+          icon: Icons.book,
+          onTap: () {
+            print("Details for hardcoded habit: Read Book");
+          },
+        ),
+      ]);
+
+      // Firestore habits
+      if (snapshot.hasData) {
+        final habits = snapshot.data!.docs;
+        habitCards.addAll(habits.map((habit) {
+          final data = habit.data() as Map<String, dynamic>;
+          final habitId = habit.id; // ID dokumenta iz Firestore
+
+          return _buildHabitCard(
+            title: data['name'] ?? "Unnamed Habit",
+            subtitle: "Goal: ${data['goal'] ?? "No Goal"}",
+            progress: data['progress'] != null
+                ? (data['progress'] as num).toDouble()
+                : 0.0,
+            icon: _getIconFromCodePoint(data['icon']),
+            onTap: () {
+              // Navigacija na HabitDetailScreen z ID-jem habit-a
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HabitDetailScreen(habitId: habitId),
+                ),
+              );
+            },
+          );
+        }).toList());
+      } else if (snapshot.hasError) {
+        habitCards.add(Center(child: Text("Error: ${snapshot.error}")));
+      }
+
+      return Column(children: habitCards);
+    },
+  );
+}
+
   Widget _buildHabitSection({
     required String title,
     required List<Widget> habitCards,
@@ -284,6 +328,12 @@ class _HabitsScreenState extends State<HabitsScreen> {
     );
   }
 
+  IconData _getIconFromCodePoint(int? codePoint) {
+    return codePoint != null
+        ? IconData(codePoint, fontFamily: 'MaterialIcons')
+        : Icons.help_outline;
+  }
+
   Widget _buildHabitCard({
     required String title,
     required String subtitle,
@@ -291,12 +341,14 @@ class _HabitsScreenState extends State<HabitsScreen> {
     required IconData icon,
     bool isCompleted = false,
     bool isFailed = false,
+    VoidCallback? onTap,
   }) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
+        onTap: onTap,
         leading: Icon(icon, color: isCompleted ? Colors.green : isFailed ? Colors.red : Colors.blue),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle),

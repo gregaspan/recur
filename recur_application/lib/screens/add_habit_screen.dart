@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart'; 
 
 class AddHabitScreen extends StatefulWidget {
   @override
@@ -50,51 +51,55 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
 
   // Function to save habit to Firestore
   Future<void> _saveHabit() async {
-    String habitName = habitNameController.text.trim();
-    String description = descriptionController.text.trim();
-    String goal = goalController.text.trim();
-    String frequency = selectedFrequency;
-    String type = selectedType;
-    String reminderTime = selectedReminderTime != null
-        ? selectedReminderTime!.format(context)
-        : "No reminder set";
-    IconData? icon = selectedIcon;
+  String habitName = habitNameController.text.trim();
+  String description = descriptionController.text.trim();
+  String goal = goalController.text.trim();
+  String frequency = selectedFrequency;
+  String type = selectedType;
+  String reminderTime = selectedReminderTime != null
+      ? selectedReminderTime!.format(context)
+      : "No reminder set";
+  IconData? icon = selectedIcon;
 
-    if (habitName.isEmpty) {
-      // Validate habit name
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Habit name cannot be empty!")),
-      );
-      return;
-    }
-
-    try {
-      // Add to Firestore collection
-      await FirebaseFirestore.instance.collection('habits').add({
-        'name': habitName,
-        'description': description,
-        'goal': goal,
-        'frequency': frequency,
-        'type': type,
-        'reminderTime': reminderTime,
-        'icon': icon != null ? icon.codePoint : null, // Save icon Unicode
-        'createdAt': Timestamp.now(),
-      });
-
-      // Success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Habit successfully added!")),
-      );
-
-      // Close the screen
-      Navigator.pop(context);
-    } catch (e) {
-      print("Error saving habit: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save habit!")),
-      );
-    }
+  if (habitName.isEmpty) {
+    // Validate habit name
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Habit name cannot be empty!")),
+    );
+    return;
   }
+
+  // Generiraj edinstven ID
+  String uniqueId = Uuid().v4(); // Ustvari UUID
+
+  try {
+    // Add to Firestore collection with custom ID
+    await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set({
+      'id': uniqueId, // Shrani ID tudi v dokument
+      'name': habitName,
+      'description': description,
+      'goal': goal,
+      'frequency': frequency,
+      'type': type,
+      'reminderTime': reminderTime,
+      'icon': icon != null ? icon.codePoint : null, // Shrani Unicode ikone
+      'createdAt': Timestamp.now(),
+    });
+
+    // Success feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Habit successfully added!")),
+    );
+
+    // Close the screen
+    Navigator.pop(context);
+  } catch (e) {
+    print("Error saving habit: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to save habit!")),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {

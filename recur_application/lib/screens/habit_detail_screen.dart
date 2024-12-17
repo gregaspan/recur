@@ -3,15 +3,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HabitDetailScreen extends StatefulWidget {
   final String habitId; // ID habit-a, ki ga kliknemo za podrobnosti
+  final DateTime selectedDate; // Datum, ki ga posredujemo iz glavnega zaslona
 
-  const HabitDetailScreen({Key? key, required this.habitId}) : super(key: key);
+  const HabitDetailScreen({
+    Key? key,
+    required this.habitId,
+    required this.selectedDate,
+  }) : super(key: key);
 
   @override
   State<HabitDetailScreen> createState() => _HabitDetailScreenState();
 }
 
 class _HabitDetailScreenState extends State<HabitDetailScreen> {
-  final TextEditingController intakeController = TextEditingController(); // Kontroler za dodajanje vnosa
+  final TextEditingController intakeController = TextEditingController();
   late DocumentSnapshot habitData;
   bool isLoading = true;
 
@@ -23,7 +28,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
 
   @override
   void dispose() {
-    intakeController.dispose(); // Čiščenje kontrolerja, da preprečimo memory leaks
+    intakeController.dispose();
     super.dispose();
   }
 
@@ -43,55 +48,75 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   }
 
   Future<void> _addIntake(double intake) async {
-  try {
-    // Preberi obstoječe podatke za habit
-    DocumentSnapshot habitSnapshot = await FirebaseFirestore.instance
-        .collection('habits')
-        .doc(widget.habitId)
-        .get();
+    try {
+      String selectedKey =
+          "${widget.selectedDate.year}-${widget.selectedDate.month}-${widget.selectedDate.day}";
 
-    // Pridobi podatke iz baze
-    final data = habitSnapshot.data() as Map<String, dynamic>;
-    final List<dynamic> intakes = data['intakes'] ?? [];
-    final String goalString = data['goal'] ?? '0';
-    final double goal = double.tryParse(goalString) ?? 0.0;
+      // Preberi obstoječe podatke za habit
+      DocumentSnapshot habitSnapshot = await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(widget.habitId)
+          .get();
 
-    // Dodaj nov vnos
-    intakes.add({
-      'time': Timestamp.now(),
-      'value': intake,
-    });
+      final data = habitSnapshot.data() as Map<String, dynamic>;
+      final days = data['days'] as Map<String, dynamic>? ?? {};
+      final String goalString = data['goal'] ?? '0';
+      final double goal = double.tryParse(goalString) ?? 0.0;
 
-    // Izračunaj skupni vnos
-    double totalIntake = intakes.fold(0.0, (sum, entry) => sum + (entry['value'] ?? 0.0));
+      final todayData = days[selectedKey] ??
+          {"intakes": [], "progress": 0.0, "status": "ongoing"};
+      final List<dynamic> intakes = todayData['intakes'] ?? [];
 
-    // Izračunaj progress (procentualno)
-    double progress = (goal > 0) ? totalIntake / goal : 0.0;
+      intakes.add({
+        'time': Timestamp.now(),
+        'value': intake,
+      });
 
-    // Posodobi habit v Firestore
-    await FirebaseFirestore.instance
-        .collection('habits')
-        .doc(widget.habitId)
-        .update({
-      'intakes': intakes,        // Posodobljena lista vnosov
-      'progress': progress,      // Dinamično izračunan progress
-    });
+      double totalIntake =
+          intakes.fold(0.0, (sum, entry) => sum + (entry['value'] ?? 0.0));
+      double progress = (goal > 0) ? (totalIntake / goal).clamp(0.0, 1.0) : 0.0;
+      String status = progress >= 1.0 ? "completed" : "ongoing";
 
-    // Osveži podatke in počisti vnosno polje
-    _fetchHabitDetails();
-    intakeController.clear();
+      days[selectedKey] = {
+        "intakes": intakes,
+        "progress": progress,
+        "status": status,
+      };
 
-    // Obvestilo uporabniku
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Intake successfully added and progress updated!")),
-    );
-  } catch (e) {
-    print("Error adding intake: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to add intake! Please try again.")),
-    );
+      await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(widget.habitId)
+          .update({'days': days});
+
+      setState(() {
+        habitData = habitSnapshot;
+      });
+
+      intakeController.clear();
+      _fetchHabitDetails();
+    } catch (e) {
+      print("Error adding intake: $e");
+    }
   }
-}
+
+  Future<void> _deleteHabit() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(widget.habitId)
+          .delete();
+
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Habit successfully deleted!")),
+      );
+    } catch (e) {
+      print("Error deleting habit: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete habit. Please try again.")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,19 +128,21 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
 
     final data = habitData.data() as Map<String, dynamic>;
     final String name = data['name'] ?? 'Unnamed Habit';
-    final String goal = data['goal'] ?? '0'; // Ciljna vrednost kot string
-    final String unit = data['unit'] ?? ''; // Unit iz baze
-    final List<dynamic> intakes = data['intakes'] ?? [];
-    final double totalIntake = intakes.fold(0.0, (sum, intake) => sum + (intake['value'] ?? 0.0));
+    final String goal = data['goal'] ?? '0';
+    final String unit = data['unit'] ?? '';
 
-    // Funkcija za formatiranje vnosa in cilja z enoto, če je "Custom"
-    String formatWithUnit(String value, String unit) {
-      return unit == 'Custom' ? "$value $unit" : value;
-    }
+    final days = data['days'] as Map<String, dynamic>? ?? {};
+    String selectedKey =
+        "${widget.selectedDate.year}-${widget.selectedDate.month}-${widget.selectedDate.day}";
+    final todayData = days[selectedKey] ??
+        {"intakes": [], "progress": 0.0, "status": "ongoing"};
+    final List<dynamic> intakes = todayData['intakes'] ?? [];
+    final double totalIntake =
+        intakes.fold(0.0, (sum, intake) => sum + (intake['value'] ?? 0.0));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: Text("$name - ${widget.selectedDate.day}.${widget.selectedDate.month}.${widget.selectedDate.year}"),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -127,11 +154,9 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Progress Circle
               CircularProgressIndicator(
                 value: (goal != '0' && totalIntake > 0)
-                    ? (totalIntake / double.tryParse(goal.replaceAll(RegExp(r'[^\d.]'), ''))!)
-                        .clamp(0.0, 1.0)
+                    ? (totalIntake / double.tryParse(goal)!).clamp(0.0, 1.0)
                     : 0.0,
                 strokeWidth: 12,
                 backgroundColor: Colors.grey[300],
@@ -139,29 +164,28 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               ),
               SizedBox(height: 10),
               Text(
-                "${(goal != '0' ? ((totalIntake / double.tryParse(goal.replaceAll(RegExp(r'[^\d.]'), ''))!) * 100).toStringAsFixed(0) : '0')}%",
+                "${((totalIntake / double.tryParse(goal)!) * 100).toStringAsFixed(0)}%",
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
                     color: Colors.yellow[800]),
               ),
               Text(
-                "${formatWithUnit(totalIntake.toStringAsFixed(1), unit)} / ${formatWithUnit(goal, unit)}",
+                "$totalIntake / $goal $unit",
                 style: TextStyle(fontSize: 18, color: Colors.grey[700]),
               ),
               SizedBox(height: 20),
 
-              // Intake Log
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Intake Log",
+                  "Intake Log (${widget.selectedDate.day}.${widget.selectedDate.month}.${widget.selectedDate.year})",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               ...intakes.map((intake) {
                 final DateTime time = (intake['time'] as Timestamp).toDate();
-                final String value = formatWithUnit(intake['value'].toString(), unit);
+                final String value = "${intake['value']} $unit";
                 return ListTile(
                   title: Text(
                     "${time.hour}:${time.minute.toString().padLeft(2, '0')} - $value",
@@ -171,7 +195,6 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
 
               SizedBox(height: 20),
 
-              // Add Intake Section
               Row(
                 children: [
                   Expanded(
@@ -179,7 +202,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                       controller: intakeController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        hintText: "Enter intake (e.g., ${unit == 'Custom' ? '500 $unit' : '10'})",
+                        hintText: "Enter intake ($unit)",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -205,13 +228,12 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               ),
               SizedBox(height: 20),
 
-              // Edit and Delete Habit Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // Edit functionality
+                      // Edit functionality (odpri stran za urejanje)
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -220,9 +242,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                     child: Text("Edit Habit"),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      // Delete functionality
-                    },
+                    onPressed: _deleteHabit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,

@@ -38,25 +38,6 @@ class MainApp extends StatelessWidget {
         '/challenges': (context) => Placeholder(), // Challenges Screen Placeholder
         '/settings': (context) => Placeholder(),
       },
-      // Dinamično ustvarjanje poti za HabitDetailScreen
-      onGenerateRoute: (settings) {
-        if (settings.name == '/details') {
-          final habitId = settings.arguments as String?; // Prejme ID habit-a
-          if (habitId != null) {
-            return MaterialPageRoute(
-              builder: (context) => HabitDetailScreen(habitId: habitId),
-            );
-          } else {
-            // Če habitId ni posredovan, vrnemo privzeto stran z napako
-            return MaterialPageRoute(
-              builder: (context) => Scaffold(
-                body: Center(child: Text("Error: No Habit ID provided.")),
-              ),
-            );
-          }
-        }
-        return null; // Default če pot ni najdena
-      },
     );
   }
 }

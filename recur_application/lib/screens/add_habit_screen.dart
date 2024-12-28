@@ -68,33 +68,84 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     // Generate unique ID
     String uniqueId = Uuid().v4();
 
-    try {
-      // Add to Firestore collection with custom ID
-      await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set({
-        'id': uniqueId,
-        'name': habitName,
-        'description': description,
-        'goal': goal, // Goal stored as number
-        'unit': unit, // Unit (Count, Time, or Custom)
-        'frequency': frequency,
-        'type': type,
-        'reminderTime': reminderTime,
-        'icon': icon != null ? icon.codePoint : null,
-        'createdAt': Timestamp.now(),
-      });
+   try {
+    // Initialize the data structure for the selected frequency
+    Map<String, dynamic> habitData = {
+      'id': uniqueId,
+      'name': habitName,
+      'description': description,
+      'goal': goal, // Convert goal to number
+      'unit': unit,
+      'frequency': frequency,
+      'type': type,
+      'reminderTime': reminderTime,
+      'icon': icon != null ? icon.codePoint : null,
+      'createdAt': Timestamp.now(),
+      'progressData': {},
+    };
 
-      // Success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Habit successfully added!")),
-      );
+    // Initialize the progress data based on frequency
+    DateTime now = DateTime.now();
+    String startKey;
+    switch (frequency.toLowerCase()) {
+      case 'weekly':
+        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+        habitData['progressData'] = {
+          startKey: {
+            'progress': 0.0,
+            'intakes': [],
+            'status': 'ongoing',
+          },
+        };
+        break;
 
-      Navigator.pop(context);
-    } catch (e) {
-      print("Error saving habit: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save habit!")),
-      );
+      case 'monthly':
+        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+        habitData['progressData'] = {
+          startKey: {
+            'progress': 0.0,
+            'intakes': [],
+            'status': 'ongoing',
+          },
+        };
+        break;
+
+      case 'yearly':
+        startKey = "${now.year}";
+        habitData['progressData'] = {
+          startKey: {
+            'progress': 0.0,
+            'intakes': [],
+            'status': 'ongoing',
+          },
+        };
+        break;
+
+      default: // 'daily'
+        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+        habitData['progressData'] = {
+          startKey: {
+            'progress': 0.0,
+            'intakes': [],
+            'status': 'ongoing',
+          },
+        };
     }
+
+    // Save to Firestore
+    await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set(habitData);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Habit successfully added!")),
+    );
+
+    Navigator.pop(context);
+  } catch (e) {
+    print("Error saving habit: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to save habit!")),
+    );
+  }
   }
 
   @override

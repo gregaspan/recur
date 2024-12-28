@@ -57,6 +57,11 @@ class _HabitsScreenState extends State<HabitsScreen> {
   @override
   Widget build(BuildContext context) {
     final weekDates = _generateWeekDates();
+    return FutureBuilder(
+    future: _updateAllHabitsStatus(), // Posodobimo habite
+    builder: (context, snapshot) {
+
+
 
     return Scaffold(
       appBar: AppBar(
@@ -78,6 +83,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
         backgroundColor: Colors.teal,
         iconColor: Colors.white,
       ),
+    );
+    },
     );
   }
 
@@ -145,24 +152,31 @@ class _HabitsScreenState extends State<HabitsScreen> {
         final data = habit.data() as Map<String, dynamic>;
         final String habitId = habit.id;
         final String frequency = data['frequency'] ?? "Daily";
-        final days = data['days'] as Map<String, dynamic>? ?? {};
+        final DateTime createdAt = (data['createdAt'] as Timestamp).toDate();
+        final days = data['periods'] as Map<String, dynamic>? ?? {};
+
+        DateTime createdAtDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+        DateTime todayDate = DateTime(today.year, today.month, today.day);
 
         // FILTRI: Preverjanje frekvence habit-a
         if (frequency.toLowerCase() != selectedFilter.toLowerCase()) continue;
 
-        // Pridobimo podatke za izbran datum iz koledarja
-        String selectedKey =
-            "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-        final dayData = days[selectedKey] ??
-            {"intakes": [], "progress": 0.0, "status": "ongoing"};
+        if (createdAtDate.isAfter(todayDate)) {
+          continue; // Skip habits created after today
+        }
+
+        String selectedKey = getSelectedKey(createdAtDate, todayDate, frequency);
+        final periodData = days[selectedKey] ??
+          {"intakes": [], "progress": 0.0, "status": "ongoing"};
+
             
 
         // Pridobimo progress in status
-        double progress = dayData['progress'] is int
-            ? (dayData['progress'] as int).toDouble()
-            : (dayData['progress'] ?? 0.0);
+        double progress = periodData['progress'] is int
+            ? (periodData['progress'] as int).toDouble()
+            : (periodData['progress'] ?? 0.0);
 
-        String status = dayData['status'] ?? "ongoing";
+        String status = periodData['status'] ?? "ongoing";
 
         // Razvrščanje habitov glede na status
         if (status == "completed") {
@@ -198,13 +212,48 @@ class _HabitsScreenState extends State<HabitsScreen> {
   );
 }
 
-// Preveri, če je datum včerajšnji
-bool _isYesterday(DateTime date) {
-  final yesterday = DateTime.now().subtract(Duration(days: 1));
-  return date.year == yesterday.year &&
-      date.month == yesterday.month &&
-      date.day == yesterday.day;
+// Funkcija za izračun izbranega ključa na podlagi frekvence
+String getSelectedKey(DateTime startDate, DateTime today, String frequency) {
+  Duration difference = today.difference(startDate);
+
+  switch (frequency) {
+    case "Daily":
+      return "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+    case "Weekly":
+      // Izračun tedna od začetka habit-a
+      int weeksElapsed = (difference.inDays / 7).floor();
+      DateTime weekStart = startDate.add(Duration(days: weeksElapsed * 7));
+      return "${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}";
+
+    case "Monthly":
+      // Izračunaj mesec od začetka habit-a
+      int monthNumber = (difference.inDays / 30).floor();
+      DateTime monthStart = DateTime(startDate.year, startDate.month + monthNumber, 1);
+      return "${monthStart.year}-${monthStart.month.toString().padLeft(2, '0')}";
+
+    case "Yearly":
+      // Izračunaj leto od začetka habit-a
+      int yearNumber = (difference.inDays / 365).floor();
+      DateTime yearStart = DateTime(startDate.year + yearNumber, 1, 1);
+      return "${yearStart.year}";
+
+    default:
+      throw ArgumentError("Nepodprta frekvenca: $frequency");
+  }
 }
+
+Map<String, dynamic> getPeriodData(
+    Map<String, dynamic> data, String frequency, DateTime today, DateTime startDate) {
+  // Pridobimo ključ na podlagi začetnega datuma in trenutnega dne
+  String selectedKey = getSelectedKey(startDate, today, frequency);
+  
+  // Preverimo, če za izračunani ključ obstajajo podatki; če ne, inicializiramo s privzetimi vrednostmi
+  return data["periods"]?[selectedKey] ??
+      {"intakes": [], "progress": 0.0, "status": "ongoing"};
+}
+
+
 
   Widget _buildHabitSection(String title, List<Widget> habitCards) {
     if (habitCards.isEmpty) return SizedBox.shrink();
@@ -273,66 +322,125 @@ bool _isYesterday(DateTime date) {
   );
 }
 
+Future<void> updateHabitStatus(List<DocumentReference> habitRefs, DateTime today) async {
+  for (var habitRef in habitRefs) {
+    final habitSnapshot = await habitRef.get();
+    final habit = habitSnapshot.data() as Map<String, dynamic>;
 
-  DateTime _calculateNextDueDate(DateTime createdDate, String frequency) {
-  DateTime now = DateTime.now();
-  switch (frequency) {
-    case 'daily':
-      return DateTime(createdDate.year, createdDate.month, createdDate.day + 1);
-    case 'weekly':
-      return createdDate.add(Duration(days: 7));
-    case 'monthly':
-      return DateTime(createdDate.year, createdDate.month + 1, createdDate.day);
-    default:
-      return createdDate;
-  }
-}
+    final String frequency = habit['frequency'] ?? "Daily";
+    final Map<String, dynamic> periods = habit['periods'] ?? {};
+    final DateTime createdAt = (habit['createdAt'] as Timestamp).toDate();
 
-// Preveri, če je čas za reset napredka glede na zadnji intake
-bool _shouldResetProgress(DateTime? lastIntakeDate, String frequency) {
-  DateTime now = DateTime.now();
-  if (lastIntakeDate == null) return true; // Če še ni vnosa, resetiramo progress
+    DateTime currentDate = createdAt;
 
-  switch (frequency.toLowerCase()) {
-    case 'daily':
-      return now.year > lastIntakeDate.year ||
-             now.month > lastIntakeDate.month ||
-             now.day > lastIntakeDate.day;
-    case 'weekly':
-      return now.difference(lastIntakeDate).inDays >= 7;
-    case 'monthly':
-      return now.year > lastIntakeDate.year || now.month > lastIntakeDate.month;
-    case 'yearly':
-      return now.year > lastIntakeDate.year;
-    default:
-      return false;
-  }
-}
+    while (!currentDate.isAfter(today)) {
+      // Izračun ključa za obdobje
+      String selectedKey = getSelectedKey(createdAt, currentDate, frequency);
 
-Future<void> initializeDay(String habitId) async {
-  try {
-    DateTime today = DateTime.now();
-    String todayKey = "${today.year}-${today.month}-${today.day}";
+      // Izračun konca obdobja
+      DateTime periodEndDate = getPeriodEndDateFromStart(createdAt, currentDate, frequency);
 
-    // Pridobimo referenco na habit
-    DocumentReference habitRef = FirebaseFirestore.instance.collection('habits').doc(habitId);
-    DocumentSnapshot habitSnapshot = await habitRef.get();
-    final data = habitSnapshot.data() as Map<String, dynamic>;
-    final days = data['days'] as Map<String, dynamic>? ?? {};
+      // Če trenutni datum spada v trenutno obdobje, nastavimo na "ongoing"
+      if (!today.isAfter(periodEndDate)) {
+        if (!periods.containsKey(selectedKey)) {
+          periods[selectedKey] = {
+            "progress": 0.0,
+            "status": "ongoing",
+            "intakes": [],
+          };
+        }
+        break; // Prekinemo, ker smo pri trenutnem obdobju
+      }
 
-    // Preverimo, če že obstaja današnji vnos
-    if (!days.containsKey(todayKey)) {
-      days[todayKey] = {
-        "intakes": [],
-        "progress": 0.0,
-        "status": "ongoing"
-      };
+      // Preverimo, ali obdobje obstaja in ga posodobimo
+      if (!periods.containsKey(selectedKey)) {
+        periods[selectedKey] = {
+          "progress": 0.0,
+          "status": "failed",
+          "intakes": [],
+        };
+      } else {
+        final periodData = periods[selectedKey];
+        double progress = periodData['progress'] ?? 0.0;
 
-      // Posodobimo Firestore s privzetimi podatki za današnji dan
-      await habitRef.update({"days": days});
+        if (currentDate.isAfter(periodEndDate) && progress < 1.0) {
+          // Označimo trenutno obdobje kot "failed"
+          periods[selectedKey]['status'] = "failed";
+
+          // Pridobimo naslednji ključ
+          DateTime nextPeriodStartDate = periodEndDate.add(Duration(seconds: 1));
+          String nextKey = getSelectedKey(createdAt, nextPeriodStartDate, frequency);
+
+          // Če naslednje obdobje še ne obstaja, ga inicializiramo
+          if (!periods.containsKey(nextKey)) {
+            periods[nextKey] = {
+              "progress": 0.0,
+              "status": "ongoing",
+              "intakes": [],
+            };
+          }
+        }
+      }
+
+      // Premaknemo na naslednji dan/teden/mesec/leto glede na frekvenco
+      switch (frequency) {
+        case "Daily":
+          currentDate = currentDate.add(Duration(days: 1));
+          break;
+        case "Weekly":
+          currentDate = currentDate.add(Duration(days: 7));
+          break;
+        case "Monthly":
+          currentDate = DateTime(currentDate.year, currentDate.month + 1, currentDate.day);
+          break;
+        case "Yearly":
+          currentDate = DateTime(currentDate.year + 1, currentDate.month, currentDate.day);
+          break;
+        default:
+          throw ArgumentError("Nepodprta frekvenca: $frequency");
+      }
     }
-  } catch (e) {
-    print("Error initializing today's entry: $e");
+
+    // Posodobimo bazo z novimi/posodobljenimi podatki o obdobjih
+    await habitRef.update({"periods": periods});
+  }
+}
+
+Future<void> _updateAllHabitsStatus() async {
+  final habitCollection = FirebaseFirestore.instance.collection('habits');
+  final habitDocs = await habitCollection.get();
+
+  // Pridobimo vse reference na habite
+  List<DocumentReference> habitRefs = habitDocs.docs.map((doc) => doc.reference).toList();
+
+  // Posodobimo statuse vseh habitov
+  await updateHabitStatus(habitRefs, DateTime.now());
+}
+
+DateTime getPeriodEndDateFromStart(DateTime startDate, DateTime today, String frequency) {
+  Duration difference = today.difference(startDate);
+
+  switch (frequency) {
+    case "Daily":
+      // Konec naslednjega dne od začetka habit-a
+      return startDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
+    case "Weekly":
+      // Tedensko obdobje od začetka habit-a (7 dni)
+      int weeksElapsed = (difference.inDays / 7).floor();
+      DateTime weekStart = startDate.add(Duration(days: weeksElapsed * 7));
+      return weekStart.add(Duration(days: 6, hours: 23, minutes: 59, seconds: 59)); // 7 dni od začetka
+    case "Monthly":
+      // Mesečno obdobje od začetka habit-a
+      int monthsElapsed = (difference.inDays / 30).floor();
+      DateTime nextMonth = DateTime(startDate.year, startDate.month + monthsElapsed + 1, startDate.day);
+      return nextMonth.subtract(Duration(seconds: 1));
+    case "Yearly":
+      // Letno obdobje od začetka habit-a
+      int yearsElapsed = (difference.inDays / 365).floor();
+      DateTime nextYear = DateTime(startDate.year + yearsElapsed + 1, startDate.month, startDate.day);
+      return nextYear.subtract(Duration(seconds: 1));
+    default:
+      throw ArgumentError("Nepodprta frekvenca: $frequency");
   }
 }
 
@@ -343,7 +451,6 @@ Future<void> initializeDay(String habitId) async {
   }
 
   bool _isToday(DateTime date) => date.day == today.day && date.month == today.month && date.year == today.year;
-  bool _isPastDay() => today.isBefore(DateTime.now().subtract(Duration(days: 1)));
 
   String _getWeekdayName(int weekday) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1];
 }

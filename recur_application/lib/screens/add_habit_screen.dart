@@ -5,6 +5,10 @@ import 'package:recur_application/widgets/timer_picker_widget.dart';
 import 'package:recur_application/widgets/icon_picker.dart';
 
 class AddHabitScreen extends StatefulWidget {
+  final String? habitId; // Če habitId ni null, zaslon deluje v načinu urejanja
+
+  const AddHabitScreen({Key? key, this.habitId}) : super(key: key);
+
   @override
   _AddHabitScreenState createState() => _AddHabitScreenState();
 }
@@ -19,6 +23,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   String selectedFrequency = 'Daily'; // Default frequency
   String selectedType = 'Morning routine'; // Default type
   IconData? selectedIcon; // Selected icon for the habit
+  bool isLoading = false;
 
   final List<String> units = ['Count', 'Time', 'Custom'];
   final List<String> frequencies = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
@@ -44,12 +49,60 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.habitId != null) {
+      _loadHabitData(); // Naloži podatke za urejanje, če habitId ni null
+    }
+  }
+
+  Future<void> _loadHabitData() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      DocumentSnapshot habitSnapshot = await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(widget.habitId)
+          .get();
+      final data = habitSnapshot.data() as Map<String, dynamic>;
+
+      setState(() {
+        habitNameController.text = data['name'] ?? '';
+        descriptionController.text = data['description'] ?? '';
+        goalController.text = data['goal'] ?? '';
+        selectedUnit = data['unit'] ?? 'Count';
+        customUnitController.text = data['customUnit'] ?? '';
+        selectedFrequency = data['frequency'] ?? 'Daily';
+        selectedType = data['type'] ?? 'Morning routine';
+        if (data['reminderTime'] != null && data['reminderTime'] != "No reminder set") {
+          final timeParts = (data['reminderTime'] as String).split(":");
+          selectedReminderTime = TimeOfDay(
+            hour: int.parse(timeParts[0]),
+            minute: int.parse(timeParts[1]),
+          );
+        }
+        if (data['icon'] != null) {
+          selectedIcon = IconData(data['icon'], fontFamily: 'MaterialIcons');
+        }
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading habit data: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   // Function to save habit to Firestore
   Future<void> _saveHabit() async {
     String habitName = habitNameController.text.trim();
     String description = descriptionController.text.trim();
     String goal = goalController.text.trim();
-    String unit = selectedUnit == 'Custom' ? customUnitController.text.trim() : selectedUnit;
+    String unit = selectedUnit == 'Custom' ? 'Custom' : selectedUnit;
+    String customUnit = selectedUnit == 'Custom' ? (customUnitController.text.trim()) : '';
     String frequency = selectedFrequency;
     String type = selectedType;
     String reminderTime = selectedReminderTime != null
@@ -76,6 +129,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       'description': description,
       'goal': goal, // Convert goal to number
       'unit': unit,
+      'customUnit': customUnit,
       'frequency': frequency,
       'type': type,
       'reminderTime': reminderTime,
@@ -132,8 +186,31 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         };
     }
 
-    // Save to Firestore
-    await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set(habitData);
+    if (widget.habitId == null) {
+      // Dodajanje novega habit-a
+      String uniqueId = Uuid().v4();
+      habitData['id'] = uniqueId;
+      habitData['createdAt'] = Timestamp.now();
+      habitData['progressData'] = {};
+
+      await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set(habitData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Habit successfully added!")),
+      );
+    } else {
+      // Posodobitev obstoječega habit-a
+      await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(widget.habitId)
+          .update(habitData);
+
+      // Posodobimo progress za obstoječe obdobja
+      await _updateProgressAfterGoalChange(widget.habitId, goal, unit);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Habit successfully updated!")),
+      );
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Habit successfully added!")),
@@ -350,6 +427,67 @@ Widget build(BuildContext context) {
       ),
     ),
   );
+}
+
+  double _parseGoalToMinutes(String goal) {
+  try {
+    // Razčleni ure
+    final hourMatch = RegExp(r'(\d+)\s*hr').firstMatch(goal);
+    final int hours = hourMatch != null ? int.parse(hourMatch.group(1)!) : 0;
+
+    // Razčleni minute
+    final minuteMatch = RegExp(r'(\d+)\s*min').firstMatch(goal);
+    final int minutes = minuteMatch != null ? int.parse(minuteMatch.group(1)!) : 0;
+
+    // Pretvori v minute
+    return (hours * 60 + minutes).toDouble();
+  } catch (e) {
+    print("Error parsing goal to minutes: $e");
+    return 0.0; // Če pride do napake, vrnemo 0.0
+  }
+}
+
+  Future<void> _updateProgressAfterGoalChange(String? habitId, String newGoal, String unit) async {
+  try {
+    DocumentSnapshot habitSnapshot =
+        await FirebaseFirestore.instance.collection('habits').doc(habitId).get();
+
+    final data = habitSnapshot.data() as Map<String, dynamic>;
+    final Map<String, dynamic> periods = data['periods'] as Map<String, dynamic>? ?? {};
+    double goalValue;
+
+    if (unit == "Time") {
+      // Pretvori cilj iz časa (npr. "30 min") v število minut
+      goalValue = _parseGoalToMinutes(newGoal);
+    } else {
+      // Pretvori cilj v število
+      goalValue = double.tryParse(newGoal) ?? 0.0;
+    }
+
+    // Posodobi progress za vsako obdobje
+    periods.forEach((key, periodData) {
+      List<dynamic> intakes = periodData['intakes'] ?? [];
+      double totalIntake = intakes.fold(0.0, (sum, entry) => sum + (entry['value'] ?? 0.0));
+
+      // Izračun napredka
+      double progress = (goalValue > 0) ? (totalIntake / goalValue).clamp(0.0, 1.0) : 0.0;
+      String status = progress >= 1.0 ? "completed" : "ongoing";
+
+      // Posodobimo podatke za to obdobje
+      periods[key] = {
+        ...periodData,
+        "progress": progress,
+        "status": status,
+      };
+    });
+
+    // Posodobimo v bazi
+    await FirebaseFirestore.instance.collection('habits').doc(habitId).update({
+      'periods': periods,
+    });
+  } catch (e) {
+    print("Error updating progress after goal change: $e");
+  }
 }
 
   Widget _buildInputField(String label, TextEditingController controller, String hint) {

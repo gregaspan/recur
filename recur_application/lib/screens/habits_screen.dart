@@ -68,6 +68,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
         backgroundColor: Colors.white,
         title: Text("Your Habits for Today", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [

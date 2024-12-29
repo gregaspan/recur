@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'overall_progress_screen.dart';
 import 'weekly_progress_screen.dart';
 import 'calendar_habit_screen.dart';
@@ -14,12 +15,51 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
   int currentPageIndex = 0; // Current page index (Overall, Weekly, Calendar)
   int currentNavBarIndex = 1; // Current bottom navigation tab index (Progress)
   String selectedFilter = "All"; // Currently selected filter
+  List<Map<String, dynamic>> filters = []; // Dynamic filters from Firestore
 
-  final List<Map<String, dynamic>> filters = [
-    {"label": "All", "isSelected": true, "color": Colors.green.shade400},
-    {"label": "Meditate", "isSelected": false, "color": Colors.yellow.shade300},
-    {"label": "Morning Routine", "isSelected": false, "color": Colors.blue.shade200},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchFilters(); // Fetch filters dynamically from Firestore
+  }
+
+  Future<void> _fetchFilters() async {
+  try {
+    final snapshot = await FirebaseFirestore.instance.collection('habits').get();
+    Set<String> types = {"All"}; // Default filter "All"
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final type = data['type'] ?? '';
+      if (type.isNotEmpty) {
+        types.add(type);
+      }
+    }
+
+    // Define a custom color palette
+    List<Color> customColors = [
+      Color(0xFF8FCB9B), // Soft green
+      Color(0xFFFBE7A8), // Pastel yellow
+      Color(0xFFB3D6F5), // Light blue
+      Color(0xFFE3B4C8), // Soft pink
+      Color(0xFFDACBA9), // Warm beige
+      Color(0xFFD9BFAA), // Light tan
+    ];
+
+    setState(() {
+      filters = types.map((type) {
+        int index = types.toList().indexOf(type) % customColors.length;
+        return {
+          "label": type,
+          "isSelected": type == "All",
+          "color": customColors[index], // Assign colors from the custom palette
+        };
+      }).toList();
+    });
+  } catch (e) {
+    print("Error fetching filters: $e");
+  }
+}
 
   void navigateToPage(int navBarIndex) {
     if (navBarIndex != currentNavBarIndex) {
@@ -58,40 +98,41 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
       body: Column(
         children: [
           // Filters Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: filters
-                  .map((filter) => GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            // Update selected filter
-                            filters.forEach((f) => f['isSelected'] = false);
-                            filter['isSelected'] = true;
-                            selectedFilter = filter['label'];
-                          });
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: Text(
-                            filter['label'],
-                            style: TextStyle(
-                              color: filter['isSelected']
-                                  ? Colors.black // Black for selected filter
-                                  : Colors.grey[700], // Dark gray for unselected filters
-                              fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.bold,
+          if (filters.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: filters
+                    .map((filter) => GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              // Update selected filter
+                              filters.forEach((f) => f['isSelected'] = false);
+                              filter['isSelected'] = true;
+                              selectedFilter = filter['label'];
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: Text(
+                              filter['label'],
+                              style: TextStyle(
+                                color: filter['isSelected']
+                                    ? Colors.black // Black for selected filter
+                                    : Colors.grey[700], // Dark gray for unselected filters
+                                fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.normal,
+                              ),
                             ),
                           ),
-                        ),
-                      ))
-                  .toList(),
+                        ))
+                    .toList(),
+              ),
             ),
-          ),
 
           // PageView Section
           Expanded(

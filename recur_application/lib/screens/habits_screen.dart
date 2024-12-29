@@ -219,6 +219,7 @@ String getSelectedKey(DateTime startDate, DateTime today, String frequency) {
 
   switch (frequency) {
     case "Daily":
+      // Vrni ključ za trenutni dan (YYYY-MM-DD)
       return "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
     case "Weekly":
@@ -339,19 +340,23 @@ Future<void> updateHabitStatus(List<DocumentReference> habitRefs, DateTime today
       String selectedKey = getSelectedKey(createdAt, currentDate, frequency);
 
       // Izračun konca obdobja
-      DateTime periodEndDate = getPeriodEndDateFromStart(createdAt, currentDate, frequency);
+      DateTime periodEndDate = getPeriodEndDateFromStart(DateTime(createdAt.year, createdAt.month, createdAt.day), // Normaliziraj
+        today,
+        frequency
+      );
 
       // Če trenutni datum spada v trenutno obdobje, nastavimo na "ongoing"
       if (!today.isAfter(periodEndDate)) {
+        // Za trenutni dan nastavi status na "ongoing", če še ni končano
         if (!periods.containsKey(selectedKey)) {
           periods[selectedKey] = {
             "progress": 0.0,
             "status": "ongoing",
             "intakes": [],
-          };
-        }
-        break; // Prekinemo, ker smo pri trenutnem obdobju
+        };
       }
+      break; // Ne preverjaj naprej
+  }
 
       // Preverimo, ali obdobje obstaja in ga posodobimo
       if (!periods.containsKey(selectedKey)) {
@@ -373,8 +378,8 @@ Future<void> updateHabitStatus(List<DocumentReference> habitRefs, DateTime today
           String nextKey = getSelectedKey(createdAt, nextPeriodStartDate, frequency);
 
           // Če naslednje obdobje še ne obstaja, ga inicializiramo
-          if (!periods.containsKey(nextKey)) {
-            periods[nextKey] = {
+          if (!periods.containsKey(selectedKey)) {
+            periods[selectedKey] = {
               "progress": 0.0,
               "status": "ongoing",
               "intakes": [],
@@ -419,27 +424,23 @@ Future<void> _updateAllHabitsStatus() async {
 }
 
 DateTime getPeriodEndDateFromStart(DateTime startDate, DateTime today, String frequency) {
-  Duration difference = today.difference(startDate);
+  DateTime normalizedStartDate = DateTime(startDate.year, startDate.month, startDate.day);
 
   switch (frequency) {
     case "Daily":
-      // Konec naslednjega dne od začetka habit-a
-      return startDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
+      return DateTime(normalizedStartDate.year, normalizedStartDate.month, normalizedStartDate.day, 23, 59, 59);
     case "Weekly":
-      // Tedensko obdobje od začetka habit-a (7 dni)
-      int weeksElapsed = (difference.inDays / 7).floor();
-      DateTime weekStart = startDate.add(Duration(days: weeksElapsed * 7));
-      return weekStart.add(Duration(days: 6, hours: 23, minutes: 59, seconds: 59)); // 7 dni od začetka
+      int weeksElapsed = (today.difference(normalizedStartDate).inDays / 7).floor();
+      DateTime weekStart = normalizedStartDate.add(Duration(days: weeksElapsed * 7));
+      return weekStart.add(Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
     case "Monthly":
-      // Mesečno obdobje od začetka habit-a
-      int monthsElapsed = (difference.inDays / 30).floor();
-      DateTime nextMonth = DateTime(startDate.year, startDate.month + monthsElapsed + 1, startDate.day);
-      return nextMonth.subtract(Duration(seconds: 1));
+      int monthsElapsed = (today.difference(normalizedStartDate).inDays / 30).floor();
+      DateTime monthStart = DateTime(normalizedStartDate.year, normalizedStartDate.month + monthsElapsed, 1);
+      return DateTime(monthStart.year, monthStart.month + 1, 0, 23, 59, 59);
     case "Yearly":
-      // Letno obdobje od začetka habit-a
-      int yearsElapsed = (difference.inDays / 365).floor();
-      DateTime nextYear = DateTime(startDate.year + yearsElapsed + 1, startDate.month, startDate.day);
-      return nextYear.subtract(Duration(seconds: 1));
+      int yearsElapsed = (today.difference(normalizedStartDate).inDays / 365).floor();
+      DateTime yearStart = DateTime(normalizedStartDate.year + yearsElapsed, 1, 1);
+      return DateTime(yearStart.year + 1, 1, 0, 23, 59, 59);
     default:
       throw ArgumentError("Nepodprta frekvenca: $frequency");
   }

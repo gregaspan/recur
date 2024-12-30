@@ -151,7 +151,9 @@ void updateSelectedFilter(String filter) {
                 });
               },
               children: [
-                OverallProgressScreen(),
+                OverallProgressScreen(
+                  selectedFilter: selectedFilter,
+                ),
                 WeeklyProgressScreen(),
                 CalendarProgressScreen(
                   selectedFilter: selectedFilter, // Pass the selected filter

@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class OverallProgressScreen extends StatelessWidget {
+class OverallProgressScreen extends StatefulWidget {
+  final String selectedFilter; // Filter, ki je izbran v ProgressScreen
+
+  OverallProgressScreen({required this.selectedFilter});
+
+  @override
+  _OverallProgressScreenState createState() => _OverallProgressScreenState();
+}
+
+class _OverallProgressScreenState extends State<OverallProgressScreen> {
+  List<String> completedHabits = []; // Seznam zaključenih habitov
+  int completedPeriods = 0; // Skupno število zaključenih obdobij
+  int totalPeriods = 0; // Skupno število vseh obdobij
+  Map<String, int> streaks = {}; // Za shranjevanje streakov za vsak habit
+
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('habits').snapshots(),
@@ -13,56 +28,72 @@ class OverallProgressScreen extends StatelessWidget {
           return Center(child: CircularProgressIndicator());
         }
 
-        // Pridobimo podatke iz baze
         final habits = snapshot.data!.docs;
-        int notDoneCount = 0;
         int streakDays = 0;
         String bestHabitName = "No Data";
         double bestHabitCompletion = 0.0;
         int bestHabitCheckIns = 0;
-        final int totalHabits = habits.length; // Skupno število habitov
-        int completedCount = 0;
-        int failedCount = 0; 
+        int bestHabitStreak = 0; // Dodajemo streak za najboljši habit
 
-        // Iteriramo skozi vse habite, da izračunamo statistike
+        completedHabits.clear();
+        completedPeriods = 0;
+        totalPeriods = 0;
+
+        // Filtriranje habitov glede na selectedFilter
         for (var habit in habits) {
           final data = habit.data() as Map<String, dynamic>;
           final periods = data['periods'] as Map<String, dynamic>? ?? {};
           final String name = data['name'] ?? 'Unnamed Habit';
+          final String type = data['type'] ?? ''; // Filter tip habit-a
 
-          bool isCompleted = periods.values.any((period) => period['status'] == 'completed');
-          bool isFailed = periods.values.any((period) => period['status'] == 'failed');
-          
-          if (isCompleted) {
-            completedCount++;
-          } else if (isFailed) {
-            failedCount++;
+          // Preverimo, ali ta habit ustreza izbranemu filtru
+          if (widget.selectedFilter != "All" && widget.selectedFilter != type) {
+            continue; // Če ne ustreza, preskočimo ta habit
           }
 
-          // Izračunamo napredek na podlagi trenutnega obdobja
+          int habitCompletedPeriods = 0;
+          int habitStreak = 0;
+
           for (var periodKey in periods.keys) {
             final periodData = periods[periodKey];
+            final status = periodData['status'] ?? "ongoing";
 
-            // Najdemo habit z največjim napredkom
+            if (status == "completed") {
+              habitCompletedPeriods++;
+              completedPeriods++;
+            }
+            totalPeriods++;
+
             final progress = periodData['progress'] ?? 0.0;
             if (progress > bestHabitCompletion) {
               bestHabitName = name;
-              bestHabitCompletion = progress * 100; // Pretvorimo v odstotke
-              bestHabitCheckIns = (periodData['intakes'] as List<dynamic>?)?.length ?? 0;
+              bestHabitCompletion = progress * 100;
+              bestHabitCheckIns =
+                  (periodData['intakes'] as List<dynamic>?)?.length ?? 0;
             }
 
-            // Določimo streak, če je na voljo
             final streak = periodData['streak'] ?? 0;
+            if (streak > habitStreak) {
+              habitStreak = streak; // Najdi največji streak za ta habit
+            }
+
             if (streak > streakDays) streakDays = streak;
+          }
+
+          if (habitCompletedPeriods > 0) {
+            completedHabits
+                .add("$name: $habitCompletedPeriods periods completed");
+            streaks[name] = habitStreak; // Dodaj streak za ta habit
+          }
+
+          if (habitStreak > bestHabitStreak) {
+            bestHabitStreak = habitStreak; // Nastavimo najboljši streak
           }
         }
 
-        
-        // Izračunamo napredek tako, da zmanjšamo vpliv "failed" habitov
-        final overallCompletion = totalHabits > 0
-          ? (((completedCount - failedCount).clamp(0, totalHabits) / totalHabits) * 100).toInt()
-          : 0;
-        
+        final overallCompletion = totalPeriods > 0
+            ? ((completedPeriods / totalPeriods) * 100).toInt()
+            : 0;
 
         return SingleChildScrollView(
           child: Padding(
@@ -71,16 +102,14 @@ class OverallProgressScreen extends StatelessWidget {
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left Section: Circular Progress Bar
                       Expanded(
                         flex: 1,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              "Dashboard",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                            ),
+                            Text("Dashboard",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 20)),
                             SizedBox(height: 16),
                             CircularProgressIndicatorWithLabel(
                               percentage: overallCompletion,
@@ -89,35 +118,30 @@ class OverallProgressScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Right Section: Summary and Highlights
                       Expanded(
                         flex: 2,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Status Summary
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                SummaryStat(
-                                  icon: Icons.check_circle,
-                                  color: Colors.green,
-                                  label: "$completedCount Completed",
+                                GestureDetector(
+                                  onTap: () => _showHabitList(),
+                                  child: SummaryStat(
+                                    icon: Icons.check_circle,
+                                    color: Colors.green,
+                                    label: "$completedPeriods Completed",
+                                  ),
                                 ),
                                 SummaryStat(
                                   icon: Icons.emoji_events,
                                   color: Colors.orange,
                                   label: "$streakDays Days Streak",
                                 ),
-                                SummaryStat(
-                                  icon: Icons.error,
-                                  color: Colors.red,
-                                  label: "$notDoneCount Not Done",
-                                ),
                               ],
                             ),
                             SizedBox(height: 24),
-                            // Best Habit Highlight
                             _buildBestHabitHighlight(
                               name: bestHabitName,
                               completion: bestHabitCompletion,
@@ -125,8 +149,7 @@ class OverallProgressScreen extends StatelessWidget {
                               streak: streakDays,
                             ),
                             SizedBox(height: 24),
-                            // Motivational Quote
-                            _buildMotivationalQuote(),
+                            _buildMotivationalQuote(overallCompletion),
                           ],
                         ),
                       ),
@@ -135,41 +158,34 @@ class OverallProgressScreen extends StatelessWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Dashboard Title
-                      Text(
-                        "Dashboard",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                      ),
+                      Text("Dashboard",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 20)),
                       SizedBox(height: 16),
-                      // Circular Progress Bar
                       CircularProgressIndicatorWithLabel(
                         percentage: overallCompletion,
                         description: "Overall Progress",
                       ),
                       SizedBox(height: 24),
-                      // Status Summary
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          SummaryStat(
-                            icon: Icons.check_circle,
-                            color: Colors.green,
-                            label: "$completedCount Completed",
+                          GestureDetector(
+                            onTap: () => _showHabitList(),
+                            child: SummaryStat(
+                              icon: Icons.check_circle,
+                              color: Colors.green,
+                              label: "$completedPeriods Completed",
+                            ),
                           ),
                           SummaryStat(
                             icon: Icons.emoji_events,
                             color: Colors.orange,
                             label: "$streakDays Days Streak",
                           ),
-                          SummaryStat(
-                            icon: Icons.error,
-                            color: Colors.red,
-                            label: "$notDoneCount Not Done",
-                          ),
                         ],
                       ),
                       SizedBox(height: 24),
-                      // Best Habit Highlight
                       _buildBestHabitHighlight(
                         name: bestHabitName,
                         completion: bestHabitCompletion,
@@ -177,11 +193,34 @@ class OverallProgressScreen extends StatelessWidget {
                         streak: streakDays,
                       ),
                       SizedBox(height: 24),
-                      // Motivational Quote
-                      _buildMotivationalQuote(),
+                      _buildMotivationalQuote(overallCompletion),
                     ],
                   ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showHabitList() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Completed Habits"),
+          content: completedHabits.isNotEmpty
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children:
+                      completedHabits.map((habit) => Text(habit)).toList(),
+                )
+              : Text("No habits found."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Close"),
+            ),
+          ],
         );
       },
     );
@@ -202,10 +241,8 @@ class OverallProgressScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Best Habit Highlight",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
+          Text("Best Habit Highlight",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           SizedBox(height: 16),
           Row(
             children: [
@@ -232,7 +269,8 @@ class OverallProgressScreen extends StatelessWidget {
             children: [
               Icon(Icons.local_fire_department, color: Colors.orange),
               SizedBox(width: 8),
-              Text("$streak-Day Streak"),
+              Text(
+                  "$streak-Day Streak"), // Dodajemo streak v Best Habit Highlight
             ],
           ),
         ],
@@ -240,7 +278,18 @@ class OverallProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMotivationalQuote() {
+  Widget _buildMotivationalQuote(int overallCompletion) {
+    String message;
+    if (overallCompletion == 100) {
+      message = "Amazing! You've completed everything!";
+    } else if (overallCompletion >= 75) {
+      message = "Great job! You're almost there!";
+    } else if (overallCompletion >= 50) {
+      message = "You're halfway through! Keep going!";
+    } else {
+      message = "Don't give up! Start small and keep progressing!";
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.yellow[100],
@@ -249,7 +298,7 @@ class OverallProgressScreen extends StatelessWidget {
       padding: EdgeInsets.all(16.0),
       child: Center(
         child: Text(
-          "“Keep up the great work!”",
+          message,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           textAlign: TextAlign.center,
         ),
@@ -258,12 +307,12 @@ class OverallProgressScreen extends StatelessWidget {
   }
 }
 
-// Custom Circular Progress Indicator
 class CircularProgressIndicatorWithLabel extends StatelessWidget {
   final int percentage;
   final String description;
 
-  CircularProgressIndicatorWithLabel({required this.percentage, required this.description});
+  CircularProgressIndicatorWithLabel(
+      {required this.percentage, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -282,33 +331,24 @@ class CircularProgressIndicatorWithLabel extends StatelessWidget {
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
             ),
-            Text(
-              "$percentage%",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            Text("$percentage%",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           ],
         ),
         SizedBox(height: 8),
-        Text(
-          description,
-          style: TextStyle(fontSize: 16, color: Colors.black54),
-        ),
+        Text(description,
+            style: TextStyle(fontSize: 16, color: Colors.black54)),
       ],
     );
   }
 }
 
-// Custom Summary Stat Widget
 class SummaryStat extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String label;
 
-  SummaryStat({
-    required this.icon,
-    required this.color,
-    required this.label,
-  });
+  SummaryStat({required this.icon, required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +356,8 @@ class SummaryStat extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 36),
         SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
       ],
     );
   }

@@ -125,12 +125,6 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
       allHabitStatuses = habitStatuses; // Vsa stanja za posamezne habite
       habitCompletion = completionData; // Skupno stanje za koledar
     });
-
-    // Debugging output
-    print("Selected Filter: $selectedFilter");
-    print("Filtered Habits: ${filteredHabits.map((habit) => habit['name']).toList()}");
-    print("Habit Completion Data: $habitCompletion");
-    print("All Habit Statuses: $allHabitStatuses");
   } catch (e) {
     print("Error fetching habit data: $e");
   }

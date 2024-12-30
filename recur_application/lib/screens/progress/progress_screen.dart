@@ -154,7 +154,9 @@ void updateSelectedFilter(String filter) {
                 OverallProgressScreen(
                   selectedFilter: selectedFilter,
                 ),
-                WeeklyProgressScreen(),
+                WeeklyProgressScreen(
+                  selectedFilter: selectedFilter,
+                ),
                 CalendarProgressScreen(
                   selectedFilter: selectedFilter, // Pass the selected filter
                 ),

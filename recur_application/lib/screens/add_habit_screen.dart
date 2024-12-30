@@ -98,123 +98,63 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
 
   // Function to save habit to Firestore
   Future<void> _saveHabit() async {
-    String habitName = habitNameController.text.trim();
-    String description = descriptionController.text.trim();
-    String goal = goalController.text.trim();
-    String unit = selectedUnit == 'Custom' ? 'Custom' : selectedUnit;
-    String customUnit = selectedUnit == 'Custom' ? (customUnitController.text.trim()) : '';
-    String frequency = selectedFrequency;
-    String type = selectedType;
-    String reminderTime = selectedReminderTime != null
-        ? selectedReminderTime!.format(context)
-        : "No reminder set";
-    IconData? icon = selectedIcon;
+  String habitName = habitNameController.text.trim();
+  String description = descriptionController.text.trim();
+  String goal = goalController.text.trim();
+  String unit = selectedUnit == 'Custom' ? 'Custom' : selectedUnit;
+  String customUnit = selectedUnit == 'Time'
+      ? 'min' // Nastavi "min", če je izbrana enota "Time"
+      : (selectedUnit == 'Custom' ? customUnitController.text.trim() : '');
+  String frequency = selectedFrequency;
+  String type = selectedType;
+  String reminderTime = selectedReminderTime != null
+      ? selectedReminderTime!.format(context)
+      : "No reminder set";
+  IconData? icon = selectedIcon;
 
-    if (habitName.isEmpty || goal.isEmpty || unit.isEmpty) {
-      // Validate habit name, goal, and unit
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Habit name, goal, and unit cannot be empty!")),
-      );
-      return;
-    }
+  if (habitName.isEmpty || goal.isEmpty || unit.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Habit name, goal, and unit cannot be empty!")),
+    );
+    return;
+  }
 
-    // Generate unique ID
-    String uniqueId = Uuid().v4();
+  DateTime now = DateTime.now();
+  DateTime normalizedDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
-   try {
-    // Initialize the data structure for the selected frequency
+  try {
     Map<String, dynamic> habitData = {
-      'id': uniqueId,
+      'id': widget.habitId ?? Uuid().v4(),
       'name': habitName,
       'description': description,
-      'goal': goal, // Convert goal to number
+      'goal': goal,
       'unit': unit,
-      'customUnit': customUnit,
+      'customUnit': customUnit, // Shrani "min", če je "Time"
       'frequency': frequency,
       'type': type,
       'reminderTime': reminderTime,
       'icon': icon != null ? icon.codePoint : null,
-      'createdAt': Timestamp.now(),
+      'createdAt': Timestamp.fromDate(normalizedDate),
       'progressData': {},
     };
 
-    // Initialize the progress data based on frequency
-    DateTime now = DateTime.now();
-    String startKey;
-    switch (frequency.toLowerCase()) {
-      case 'weekly':
-        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-        habitData['progressData'] = {
-          startKey: {
-            'progress': 0.0,
-            'intakes': [],
-            'status': 'ongoing',
-          },
-        };
-        break;
-
-      case 'monthly':
-        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}";
-        habitData['progressData'] = {
-          startKey: {
-            'progress': 0.0,
-            'intakes': [],
-            'status': 'ongoing',
-          },
-        };
-        break;
-
-      case 'yearly':
-        startKey = "${now.year}";
-        habitData['progressData'] = {
-          startKey: {
-            'progress': 0.0,
-            'intakes': [],
-            'status': 'ongoing',
-          },
-        };
-        break;
-
-      default: // 'daily'
-        startKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-        habitData['progressData'] = {
-          startKey: {
-            'progress': 0.0,
-            'intakes': [],
-            'status': 'ongoing',
-          },
-        };
-    }
-
     if (widget.habitId == null) {
-      // Dodajanje novega habit-a
-      String uniqueId = Uuid().v4();
-      habitData['id'] = uniqueId;
-      habitData['createdAt'] = Timestamp.now();
-      habitData['progressData'] = {};
-
-      await FirebaseFirestore.instance.collection('habits').doc(uniqueId).set(habitData);
+      await FirebaseFirestore.instance
+          .collection('habits')
+          .doc(habitData['id'])
+          .set(habitData);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Habit successfully added!")),
       );
     } else {
-      // Posodobitev obstoječega habit-a
       await FirebaseFirestore.instance
           .collection('habits')
           .doc(widget.habitId)
           .update(habitData);
-
-      // Posodobimo progress za obstoječe obdobja
-      await _updateProgressAfterGoalChange(widget.habitId, goal, unit);
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Habit successfully updated!")),
       );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Habit successfully added!")),
-    );
 
     Navigator.pop(context);
   } catch (e) {
@@ -223,7 +163,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       SnackBar(content: Text("Failed to save habit!")),
     );
   }
-  }
+}
 
   @override
 Widget build(BuildContext context) {
@@ -357,8 +297,10 @@ Widget build(BuildContext context) {
                         onChanged: (value) {
                           setState(() {
                             selectedUnit = value!;
-                            if (selectedUnit != 'Time') {
-                              goalController.clear();
+                            if (selectedUnit == 'Time') {
+                              customUnitController.text = 'min'; // Avtomatsko nastavi "min", če je izbran Time
+                            } else if (selectedUnit != 'Custom') {
+                              customUnitController.clear(); // Počisti vrednost za vse ostale enote razen Custom
                             }
                           });
                         },

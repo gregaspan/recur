@@ -22,10 +22,19 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchHabitData();
+    _fetchHabitData(widget.selectedFilter);
   }
 
-  Future<void> _fetchHabitData() async {
+  @override
+  void didUpdateWidget(covariant CalendarProgressScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Preveri, ali se je filter spremenil
+    if (widget.selectedFilter != oldWidget.selectedFilter) {
+      _fetchHabitData(widget.selectedFilter); // Ponovno naloži podatke
+    }
+  }
+
+  Future<void> _fetchHabitData(String selectedFilter) async {
   try {
     // Pridobi vse habite iz Firestore
     final snapshot = await FirebaseFirestore.instance.collection('habits').get();
@@ -35,12 +44,13 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
     Map<DateTime, bool> completionData = {}; // Za barvanje koledarja
 
     // Filtriraj habite glede na filter
-      List<Map<String, dynamic>> filteredHabits = selectedFilter == "All"
-          ? allHabits
-          : allHabits.where((habit) => habit['type'] == selectedFilter).toList();
+    List<Map<String, dynamic>> filteredHabits = selectedFilter == "All"
+        ? allHabits
+        : allHabits.where((habit) => habit['type']?.toString().toLowerCase() == selectedFilter.toLowerCase()).toList();
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
+    // Procesiraj filtre
+    for (var habit in filteredHabits) {
+      final data = habit;
       final periods = data['periods'] as Map<String, dynamic>? ?? {};
       final frequency = (data['frequency'] ?? 'daily').toLowerCase();
       final createdAt = (data['createdAt'] as Timestamp).toDate();
@@ -110,11 +120,15 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
       completionData[date] = allCompleted;
     });
 
+    // Posodobi stanje komponente
     setState(() {
       allHabitStatuses = habitStatuses; // Vsa stanja za posamezne habite
       habitCompletion = completionData; // Skupno stanje za koledar
     });
 
+    // Debugging output
+    print("Selected Filter: $selectedFilter");
+    print("Filtered Habits: ${filteredHabits.map((habit) => habit['name']).toList()}");
     print("Habit Completion Data: $habitCompletion");
     print("All Habit Statuses: $allHabitStatuses");
   } catch (e) {

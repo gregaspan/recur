@@ -355,6 +355,7 @@ int calculateStreak(Map<String, dynamic> periods, String frequency, DateTime tod
     final String goalString = data['goal'] ?? '0';
     final String unit = data['unit'] ?? '';
     final String frequency = data['frequency'] ?? 'Daily';
+    final String customUnit = data ['customUnit'] ?? '';
     final DateTime createdAt = (data['createdAt'] as Timestamp).toDate();
     final Map<String, dynamic> periods = data['periods'] as Map<String, dynamic>? ?? {};
 
@@ -419,7 +420,7 @@ int calculateStreak(Map<String, dynamic> periods, String frequency, DateTime tod
                 "${(progress * 100).toStringAsFixed(0)}%",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
               ),
-              Text("$totalIntake / $goal",
+              Text("$totalIntake / $goal $customUnit",
                 style: TextStyle(fontSize: 14),
               ),
               SizedBox(height: 20),
@@ -558,7 +559,7 @@ int calculateStreak(Map<String, dynamic> periods, String frequency, DateTime tod
               ...intakes.map((intake) {
                 final DateTime time = (intake['time'] as Timestamp).toDate();
                 return ListTile(
-                  title: Text("${time.day}.${time.month}.${time.year} - ${intake['value']} $unit"),
+                  title: Text("${time.day}.${time.month}.${time.year} - ${intake['value']} $customUnit"),
                 );
               }).toList(),
             SizedBox(height: 30),

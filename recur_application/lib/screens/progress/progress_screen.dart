@@ -61,6 +61,12 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
   }
 }
 
+void updateSelectedFilter(String filter) {
+  setState(() {
+    selectedFilter = filter;
+  });
+}
+
   void navigateToPage(int navBarIndex) {
     if (navBarIndex != currentNavBarIndex) {
       setState(() {
@@ -99,40 +105,41 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
         children: [
           // Filters Section
           if (filters.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: filters
-                    .map((filter) => GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              // Update selected filter
-                              filters.forEach((f) => f['isSelected'] = false);
-                              filter['isSelected'] = true;
-                              selectedFilter = filter['label'];
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                            child: Text(
-                              filter['label'],
-                              style: TextStyle(
-                                color: filter['isSelected']
-                                    ? Colors.black // Black for selected filter
-                                    : Colors.grey[700], // Dark gray for unselected filters
-                                fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ),
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters
+            .map((filter) => GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Označi izbran filter
+                      filters.forEach((f) => f['isSelected'] = false);
+                      filter['isSelected'] = true;
+                      updateSelectedFilter(filter['label']); // Posodobi filter
+                    });
+                  },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 8.0),
+                    decoration: BoxDecoration(
+                      color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text(
+                      filter['label'],
+                      style: TextStyle(
+                        color: filter['isSelected'] ? Colors.black : Colors.grey[700],
+                        fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    ),
+  ),
 
           // PageView Section
           Expanded(

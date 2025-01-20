@@ -73,7 +73,9 @@ Welcome to the **Recur**! This Flutter application, powered by Firebase, helps u
 | **Challenges**              | Join fun challenges to stay motivated and build consistency.                                 |
 
 
-Screens will be available here: [Recur Screens](https://gregaspan.notion.site/Recur-1817057a1ca38072a04ddec8c7d1f068?pvs=4)
+Screens are available here: [Recur Screens](https://gregaspan.notion.site/Recur-1817057a1ca38072a04ddec8c7d1f068?pvs=4)
+
+User Guide is available here: [Recur User Guide](https://gregaspan.notion.site/Recur-Guide-1817057a1ca380b08445ef23250e3716?pvs=4)
 
 
 

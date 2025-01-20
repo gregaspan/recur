@@ -72,6 +72,27 @@ Welcome to the **Recur**! This Flutter application, powered by Firebase, helps u
 | **Settings**                | Manage account details, sync via `.ics` calendar links, and customize the app.               |
 | **Challenges**              | Join fun challenges to stay motivated and build consistency.                                 |
 
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.00.19.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/74eb853c-1d52-44b8-a986-a56cfc74e126/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.00.19.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.01.50.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/c940e296-286f-4f55-a26c-6581c3f2b100/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.01.50.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.05.25.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/f924568d-d1ba-437c-bd73-7700558446ba/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.05.25.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.06.34.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/7b70777d-a209-4918-853b-ce0b4cbc5cd5/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.06.34.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.07.02.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/f346c66e-ee15-4752-9e9f-e6ef9ee1ee69/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.07.02.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.07.06.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/58c71e2f-183b-41d8-b2f5-0fce3ee3fd47/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.07.06.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.07.31.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/32db04b8-2364-4c82-bafd-74c0e5b8c223/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.07.31.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.07.51.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/08fb88fb-663b-496c-b079-033773f12f12/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.07.51.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.08.04.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/7a908c95-ae64-45d5-bcf4-101481b20e25/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.08.04.png)
+
+![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.11.16.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/ae96151f-e58c-43c2-895e-9c643a48d3b1/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.11.16.png)
+
 ---
 
 ## 🗎 Database Schema

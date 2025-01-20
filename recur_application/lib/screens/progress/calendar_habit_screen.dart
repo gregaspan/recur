@@ -13,12 +13,12 @@ class CalendarProgressScreen extends StatefulWidget {
 }
 
 class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
-  String get selectedFilter => widget.selectedFilter; 
+  String get selectedFilter => widget.selectedFilter;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, bool?> habitCompletion = {};
   List<Map<String, dynamic>> habits = [];
-  Map<DateTime, Map<String, bool>> allHabitStatuses = {}; 
+  Map<DateTime, Map<String, bool>> allHabitStatuses = {};
 
   @override
   void initState() {
@@ -29,120 +29,118 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
   @override
   void didUpdateWidget(covariant CalendarProgressScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Preveri, ali se je filter spremenil
+    // Check if the filter has changed
     if (widget.selectedFilter != oldWidget.selectedFilter) {
-      _fetchHabitData(widget.selectedFilter); // Ponovno naloži podatke
+      _fetchHabitData(widget.selectedFilter); // Reload data
     }
   }
 
   Future<void> _fetchHabitData(String selectedFilter) async {
-  try {
-    // Pridobi trenutno prijavljenega uporabnika
-    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    try {
+      // Get the currently logged-in user
+      final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
-    if (userId == null) {
-      print("User is not logged in.");
-      return;
-    }
+      if (userId == null) {
+        print("User is not logged in.");
+        return;
+      }
 
-    // Pridobi habite za trenutnega uporabnika iz Firestore
-    final snapshot = await FirebaseFirestore.instance
-        .collection('habits')
-        .where('userId', isEqualTo: userId) // Filtriraj po userId
-        .get();
-    List<Map<String, dynamic>> allHabits = snapshot.docs.map((doc) => doc.data()).toList();
+      // Fetch habits for the current user from Firestore
+      final snapshot = await FirebaseFirestore.instance
+          .collection('habits')
+          .where('userId', isEqualTo: userId) // Filter by userId
+          .get();
+      List<Map<String, dynamic>> allHabits = snapshot.docs.map((doc) => doc.data()).toList();
 
-    Map<DateTime, Map<String, bool>> habitStatuses = {}; // Sledi stanju posameznih habitov
-    Map<DateTime, bool> completionData = {}; // Za barvanje koledarja
+      Map<DateTime, Map<String, bool>> habitStatuses = {}; // Track individual habit statuses
+      Map<DateTime, bool> completionData = {}; // For coloring the calendar
 
-    // Filtriraj habite glede na filter
-    List<Map<String, dynamic>> filteredHabits = selectedFilter == "All"
-        ? allHabits
-        : allHabits.where((habit) => habit['type']?.toString().toLowerCase() == selectedFilter.toLowerCase()).toList();
+      // Filter habits based on the selected filter
+      List<Map<String, dynamic>> filteredHabits = selectedFilter == "All"
+          ? allHabits
+          : allHabits.where((habit) => habit['type']?.toString().toLowerCase() == selectedFilter.toLowerCase()).toList();
 
-    // Procesiraj filtre
-    for (var habit in filteredHabits) {
-      final data = habit;
-      final periods = data['periods'] as Map<String, dynamic>? ?? {};
-      final frequency = (data['frequency'] ?? 'daily').toLowerCase();
-      final createdAt = (data['createdAt'] as Timestamp).toDate();
-      final habitName = data['name'] ?? 'Unnamed Habit';
+      // Process filters
+      for (var habit in filteredHabits) {
+        final data = habit;
+        final periods = data['periods'] as Map<String, dynamic>? ?? {};
+        final frequency = (data['frequency'] ?? 'daily').toLowerCase();
+        final createdAt = (data['createdAt'] as Timestamp).toDate();
+        final habitName = data['name'] ?? 'Unnamed Habit';
 
-      periods.forEach((key, value) {
-        DateTime periodDate;
+        periods.forEach((key, value) {
+          DateTime periodDate;
 
-        // Pretvorba obdobja v DateTime
-        switch (frequency) {
-          case 'daily':
-            if (key.length == 10) {
-              periodDate = DateTime.parse(key); // Oblika: YYYY-MM-DD
-            } else {
-              return; // Preskoči neveljavne ključe
-            }
-            break;
+          // Convert period to DateTime
+          switch (frequency) {
+            case 'daily':
+              if (key.length == 10) {
+                periodDate = DateTime.parse(key); // Format: YYYY-MM-DD
+              } else {
+                return; // Skip invalid keys
+              }
+              break;
 
-          case 'weekly':
-            if (key.length == 10) {
-              DateTime parsedDate = DateTime.parse(key); // Oblika: YYYY-MM-DD
-              int daysSinceCreated = parsedDate.difference(createdAt).inDays;
-              int weeksSinceCreated = (daysSinceCreated / 7).floor();
-              periodDate = createdAt.add(Duration(days: weeksSinceCreated * 7));
-            } else {
-              return;
-            }
-            break;
+            case 'weekly':
+              if (key.length == 10) {
+                DateTime parsedDate = DateTime.parse(key); // Format: YYYY-MM-DD
+                int daysSinceCreated = parsedDate.difference(createdAt).inDays;
+                int weeksSinceCreated = (daysSinceCreated / 7).floor();
+                periodDate = createdAt.add(Duration(days: weeksSinceCreated * 7));
+              } else {
+                return;
+              }
+              break;
 
-          case 'monthly':
-            if (key.length == 7) {
-              DateTime firstDayOfMonth = DateTime.parse('$key-01'); // Oblika: YYYY-MM
-              periodDate = firstDayOfMonth;
-            } else {
-              return;
-            }
-            break;
+            case 'monthly':
+              if (key.length == 7) {
+                DateTime firstDayOfMonth = DateTime.parse('$key-01'); // Format: YYYY-MM
+                periodDate = firstDayOfMonth;
+              } else {
+                return;
+              }
+              break;
 
-          case 'yearly':
-            if (key.length == 4) {
-              DateTime firstDayOfYear = DateTime(int.parse(key), 1, 1); // Oblika: YYYY
-              periodDate = firstDayOfYear;
-            } else {
-              return;
-            }
-            break;
+            case 'yearly':
+              if (key.length == 4) {
+                DateTime firstDayOfYear = DateTime(int.parse(key), 1, 1); // Format: YYYY
+                periodDate = firstDayOfYear;
+              } else {
+                return;
+              }
+              break;
 
-          default:
-            return; // Preskoči nepodprte frekvence
-        }
+            default:
+              return; // Skip unsupported frequencies
+          }
 
-        // Preveri status in ga pretvori v bool
-        if (value is Map<String, dynamic> && value.containsKey('status')) {
-          String status = value['status']; // Npr. "completed", "failed", "ongoing"
-          bool isCompleted = (status == 'completed');
+          // Check status and convert to bool
+          if (value is Map<String, dynamic> && value.containsKey('status')) {
+            String status = value['status']; // e.g., "completed", "failed", "ongoing"
+            bool isCompleted = (status == 'completed');
 
-          // Dodaj stanje za ta datum in habit
-          habitStatuses.putIfAbsent(periodDate, () => {});
-          habitStatuses[periodDate]![habitName] = isCompleted;
-        }
+            // Add status for this date and habit
+            habitStatuses.putIfAbsent(periodDate, () => {});
+            habitStatuses[periodDate]![habitName] = isCompleted;
+          }
+        });
+      }
+
+      // Create `completionData` for the calendar (using theme colors)
+      habitStatuses.forEach((date, habits) {
+        bool allCompleted = habits.values.every((status) => status);
+        completionData[date] = allCompleted;
       });
+
+      // Update component state
+      setState(() {
+        allHabitStatuses = habitStatuses; // All statuses for individual habits
+        habitCompletion = completionData; // Overall status for the calendar
+      });
+    } catch (e) {
+      print("Error fetching habit data: $e");
     }
-
-    // Ustvari `completionData` za koledar (rdeč ali zelen krog glede na vse habite)
-    habitStatuses.forEach((date, habits) {
-      bool allCompleted = habits.values.every((status) => status);
-      completionData[date] = allCompleted;
-    });
-
-    // Posodobi stanje komponente
-    setState(() {
-      allHabitStatuses = habitStatuses; // Vsa stanja za posamezne habite
-      habitCompletion = completionData; // Skupno stanje za koledar
-    });
-  } catch (e) {
-    print("Error fetching habit data: $e");
   }
-}
-
-
 
   static DateTime _normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
 
@@ -151,17 +149,18 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredHabitCompletion = _getFilteredHabitCompletion();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Habit Tracking"),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             SizedBox(height: 16),
-            Text(
-              "Habit Tracking",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-            SizedBox(height: 8),
             _buildCalendar(filteredHabitCompletion),
             if (_selectedDay != null) ...[
               _buildSelectedDaySummary(),
@@ -172,10 +171,12 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
       ),
     );
   }
-  
 
   // Build Calendar Widget
   Widget _buildCalendar(Map<DateTime, bool?> filteredHabitCompletion) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TableCalendar(
@@ -198,16 +199,19 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
                 margin: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
                   color: isCompleted == true
-                      ? Colors.green
+                      ? colorScheme.primary
                       : isCompleted == false
-                          ? Colors.red
+                          ? colorScheme.error
                           : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   '${day.day}',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isCompleted != null ? Colors.white : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               );
             }
@@ -217,118 +221,140 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
         headerStyle: HeaderStyle(
           titleCentered: true,
           formatButtonVisible: false,
+          titleTextStyle: TextStyle(
+            color: colorScheme.onPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.primary,
+          ),
         ),
-      ),
-    );
-  }
-
-Widget _buildSelectedDaySummary() {
-  if (_selectedDay == null) return SizedBox.shrink();
-
-  // Normaliziraj izbrani dan
-  DateTime normalizedSelectedDay = _normalizeDate(_selectedDay!);
-
-  // Pridobi podatke o statusih za izbrani dan
-  final habitStatusesForDay = allHabitStatuses[normalizedSelectedDay] ?? {};
-
-  // Če ni podatkov, izpiši, da ni habitov za ta dan
-  if (habitStatusesForDay.isEmpty) {
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      margin: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Center(
-        child: Text(
-          "No habits scheduled for ${_formatDate(normalizedSelectedDay)}",
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-
-  // Ustvari sezname za dokončane in nedokončane habite
-  List<String> completedHabits = [];
-  List<String> failedHabits = [];
-
-  habitStatusesForDay.forEach((habitName, status) {
-    if (status == true) {
-      completedHabits.add(habitName); // Completed habits
-    } else if (status == false) {
-      failedHabits.add(habitName); // Failed habits
-    }
-  });
-
-  return Container(
-    padding: EdgeInsets.all(16.0),
-    margin: EdgeInsets.all(8.0),
-    decoration: BoxDecoration(
-      color: Colors.blue[50],
-      borderRadius: BorderRadius.circular(12.0),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Selected Day: ${_formatDate(normalizedSelectedDay)}",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        SizedBox(height: 12),
-        if (completedHabits.isNotEmpty) ...[
-          _buildHabitSection("Completed Habits", completedHabits, Colors.green),
-        ],
-        if (failedHabits.isNotEmpty) ...[
-          _buildHabitSection("Failed Habits", failedHabits, Colors.red),
-        ],
-      ],
-    ),
-  );
-}
-
-Widget _buildHabitSection(String title, List<String> habits, Color color) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
-      ),
-      SizedBox(height: 8),
-      ...habits.map(
-        (habit) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            children: [
-              Icon(
-                Icons.circle,
-                color: color,
-                size: 12,
-              ),
-              SizedBox(width: 8),
-              Text(
-                habit,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-            ],
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: colorScheme.secondary.withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: BoxDecoration(
+            color: colorScheme.primary,
+            shape: BoxShape.circle,
           ),
         ),
       ),
-      SizedBox(height: 16),
-    ],
-  );
-}
+    );
+  }
 
-  // Build Monthly Summary
-  Widget _buildMonthlySummary(Map<DateTime, bool?> filteredHabitCompletion) {
+  Widget _buildSelectedDaySummary() {
+    if (_selectedDay == null) return SizedBox.shrink();
+
+    // Normalize the selected day
+    DateTime normalizedSelectedDay = _normalizeDate(_selectedDay!);
+
+    // Get status data for the selected day
+    final habitStatusesForDay = allHabitStatuses[normalizedSelectedDay] ?? {};
+
+    // If no data, display a message
+    if (habitStatusesForDay.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(16.0),
+        margin: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Center(
+          child: Text(
+            "No habits scheduled for ${_formatDate(normalizedSelectedDay)}",
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+
+    // Create lists for completed and failed habits
+    List<String> completedHabits = [];
+    List<String> failedHabits = [];
+
+    habitStatusesForDay.forEach((habitName, status) {
+      if (status == true) {
+        completedHabits.add(habitName); // Completed habits
+      } else if (status == false) {
+        failedHabits.add(habitName); // Failed habits
+      }
+    });
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(16.0),
       margin: EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4.0, spreadRadius: 2.0)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Selected Day: ${_formatDate(normalizedSelectedDay)}",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          SizedBox(height: 12),
+          if (completedHabits.isNotEmpty) ...[
+            _buildHabitSection("Completed Habits", completedHabits, colorScheme.primary),
+          ],
+          if (failedHabits.isNotEmpty) ...[
+            _buildHabitSection("Failed Habits", failedHabits, colorScheme.error),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHabitSection(String title, List<String> habits, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+        ),
+        SizedBox(height: 8),
+        ...habits.map(
+          (habit) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.circle,
+                  color: color,
+                  size: 12,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  habit,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
+    );
+  }
+
+  // Build Monthly Summary
+  Widget _buildMonthlySummary(Map<DateTime, bool?> filteredHabitCompletion) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      margin: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: colorScheme.background,
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: [BoxShadow(color: colorScheme.shadow.withOpacity(0.1), blurRadius: 4.0, spreadRadius: 2.0)],
       ),
       child: Column(
         children: [
@@ -340,11 +366,11 @@ Widget _buildHabitSection(String title, List<String> habits, Color color) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryStat(Icons.check_circle, 'Completed', Colors.green,
+              _buildSummaryStat(Icons.check_circle, 'Completed', colorScheme.primary,
                   _fullyCompletedDays(filteredHabitCompletion).toString()),
-              _buildSummaryStat(Icons.error, 'Incomplete', Colors.red,
+              _buildSummaryStat(Icons.error, 'Incomplete', colorScheme.error,
                   (filteredHabitCompletion.length - _fullyCompletedDays(filteredHabitCompletion)).toString()),
-              _buildSummaryStat(Icons.percent, 'Completion', Colors.blue,
+              _buildSummaryStat(Icons.percent, 'Completion', colorScheme.secondary,
                   '${_calculateCompletionRate(filteredHabitCompletion)}%'),
             ],
           ),

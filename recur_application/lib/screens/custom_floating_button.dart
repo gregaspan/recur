@@ -3,39 +3,38 @@ import 'package:flutter/material.dart';
 class CustomFloatingButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  final Color backgroundColor;
-  final Color iconColor;
-  final double size; // Dodaj možnost za velikost gumba
+  final double size;
 
-  CustomFloatingButton({
+  const CustomFloatingButton({
+    Key? key,
     required this.icon,
     required this.onPressed,
-    this.backgroundColor = Colors.teal, // Privzeta barva
-    this.iconColor = Colors.white, // Privzeta barva ikone
-    this.size = 56.0, // Privzeta velikost
-  });
+    this.size = 56.0,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Container(
       height: size,
       width: size,
       decoration: BoxDecoration(
-        color: backgroundColor,
-        shape: BoxShape.circle, // Okrogla oblika
+        color: theme.primaryColor,
+        shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: theme.shadowColor.withOpacity(0.2),
             blurRadius: 6,
-            offset: Offset(0, 3), // Poudarek na senco
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: IconButton(
         icon: Icon(
           icon,
-          color: iconColor,
-          size: size / 2.5, // Velikost ikone glede na gumb
+          color: theme.colorScheme.onPrimary,
+          size: size / 2.5,
         ),
         onPressed: onPressed,
       ),

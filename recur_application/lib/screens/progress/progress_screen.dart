@@ -20,52 +20,54 @@ class _ProgressScreenMainState extends State<ProgressScreenMain> {
   @override
   void initState() {
     super.initState();
-    _fetchFilters(); // Fetch filters dynamically from Firestore
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchFilters(); // Fetch filters dynamically from Firestore
+    });
   }
 
   Future<void> _fetchFilters() async {
-  try {
-    final snapshot = await FirebaseFirestore.instance.collection('habits').get();
-    Set<String> types = {"All"}; // Default filter "All"
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('habits').get();
+      Set<String> types = {"All"}; // Default filter "All"
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final type = data['type'] ?? '';
-      if (type.isNotEmpty) {
-        types.add(type);
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final type = data['type'] ?? '';
+        if (type.isNotEmpty) {
+          types.add(type);
+        }
       }
+
+      // Define a list of default Material colors
+      List<Color> materialColors = [
+        Colors.blue,
+        Colors.green,
+        Colors.orange,
+        Colors.purple,
+        Colors.red,
+        Colors.teal,
+      ];
+
+      setState(() {
+        filters = types.map((type) {
+          int index = types.toList().indexOf(type) % materialColors.length;
+          return {
+            "label": type,
+            "isSelected": type == "All",
+            "color": materialColors[index], // Assign colors from the Material palette
+          };
+        }).toList();
+      });
+    } catch (e) {
+      print("Error fetching filters: $e");
     }
-
-    // Define a custom color palette
-    List<Color> customColors = [
-      Color(0xFF8FCB9B), // Soft green
-      Color(0xFFFBE7A8), // Pastel yellow
-      Color(0xFFB3D6F5), // Light blue
-      Color(0xFFE3B4C8), // Soft pink
-      Color(0xFFDACBA9), // Warm beige
-      Color(0xFFD9BFAA), // Light tan
-    ];
-
-    setState(() {
-      filters = types.map((type) {
-        int index = types.toList().indexOf(type) % customColors.length;
-        return {
-          "label": type,
-          "isSelected": type == "All",
-          "color": customColors[index], // Assign colors from the custom palette
-        };
-      }).toList();
-    });
-  } catch (e) {
-    print("Error fetching filters: $e");
   }
-}
 
-void updateSelectedFilter(String filter) {
-  setState(() {
-    selectedFilter = filter;
-  });
-}
+  void updateSelectedFilter(String filter) {
+    setState(() {
+      selectedFilter = filter;
+    });
+  }
 
   void navigateToPage(int navBarIndex) {
     if (navBarIndex != currentNavBarIndex) {
@@ -90,13 +92,18 @@ void updateSelectedFilter(String filter) {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
         title: Text(
           "Progress",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -105,41 +112,41 @@ void updateSelectedFilter(String filter) {
         children: [
           // Filters Section
           if (filters.isNotEmpty)
-  Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters
-            .map((filter) => GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Označi izbran filter
-                      filters.forEach((f) => f['isSelected'] = false);
-                      filter['isSelected'] = true;
-                      updateSelectedFilter(filter['label']); // Posodobi filter
-                    });
-                  },
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 8.0),
-                    decoration: BoxDecoration(
-                      color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Text(
-                      filter['label'],
-                      style: TextStyle(
-                        color: filter['isSelected'] ? Colors.black : Colors.grey[700],
-                        fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ))
-            .toList(),
-      ),
-    ),
-  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: filters
+                      .map((filter) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                // Označi izbran filter
+                                filters.forEach((f) => f['isSelected'] = false);
+                                filter['isSelected'] = true;
+                                updateSelectedFilter(filter['label']); // Posodobi filter
+                              });
+                            },
+                            child: Container(
+                              margin: EdgeInsets.symmetric(horizontal: 8.0),
+                              decoration: BoxDecoration(
+                                color: filter['color']?.withOpacity(filter['isSelected'] ? 1.0 : 0.4),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Text(
+                                filter['label'],
+                                style: TextStyle(
+                                  color: filter['isSelected'] ? colorScheme.onPrimary : colorScheme.onSurface,
+                                  fontWeight: filter['isSelected'] ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+            ),
 
           // PageView Section
           Expanded(
@@ -178,8 +185,8 @@ void updateSelectedFilter(String filter) {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: currentPageIndex == index
-                        ? Colors.green
-                        : Colors.grey.shade300,
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withOpacity(0.3),
                   ),
                 ),
               ),

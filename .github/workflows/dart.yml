@@ -11,27 +11,32 @@ on:
   pull_request:
     branches: [ "main" ]
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+jobs:  
+  build:      
+    name: Build & Release 
+    runs-on: macos-latest 
 
     steps:
-      - uses: actions/checkout@v4
+        #1 Checkout Repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      # Note: This workflow uses the latest stable version of the Dart SDK.
-      # You can specify other versions if desired, see documentation here:
-      # https://github.com/dart-lang/setup-dart/blob/main/README.md
-      - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
+        #2 Setup Java
+      - name: Set Up Java
+        uses: actions/setup-java@v3.12.0
+        with:
+          distribution: 'oracle'
+          java-version: '17'
 
-      - name: Install dependencies
+        #3 Setup Flutter
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.2'
+          channel: 'stable'
+
+        #4 Install Dependencies
+      - name: Install Dependencies
         run: flutter pub get
         working-directory: ./recur_application
 
-      # Uncomment this step to verify the use of 'dart format' on each commit.
-      # - name: Verify formatting
-      #   run: dart format --output=none --set-exit-if-changed .
-      #   working-directory: ./recur_application
-
-      - name: Analyze project source
-        run: flutter analyze
-        working-directory: ./recur_application

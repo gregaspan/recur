@@ -72,18 +72,7 @@ Welcome to the **Recur**! This Flutter application, powered by Firebase, helps u
 | **Challenges**              | Join fun challenges to stay motivated and build consistency.                                 |
 
 
-![image](https://github.com/user-attachments/assets/f3123e01-e849-479f-8744-7dbd8e15077d)
-![image](https://github.com/user-attachments/assets/a9730c41-7ed5-4836-a8f5-fd28a2c9e4e9)# 
-![image](https://github.com/user-attachments/assets/57babec2-7cdc-4ad3-9454-b289faefb9ca)
-![image](https://github.com/user-attachments/assets/30e03e59-562d-472a-adb4-b75f9a6f26b4)
-![image](https://github.com/user-attachments/assets/9cea54df-20f0-458b-affc-a9945f9f09c9)
-![image](https://github.com/user-attachments/assets/624ac89b-62cc-45f0-ad81-e73c8e9991f2)
-![image](https://github.com/user-attachments/assets/6fbeabdf-8873-4b32-a2aa-ee295ea0c81e)
-![image](https://github.com/user-attachments/assets/99547b6d-e414-4cd4-879d-9ef8477dcf3e)
-![image](https://github.com/user-attachments/assets/d2ca3996-b88c-420b-a3c7-ff64add1bf02)
-![image](https://github.com/user-attachments/assets/165242bb-bb66-4489-944a-4a97f99b8624)
-![image](https://github.com/user-attachments/assets/b2be84a2-9281-4fc4-9eaa-4a4c93901ba9)
-![image](https://github.com/user-attachments/assets/50e31392-4d13-42a6-b9e9-93196e38ece6)
+Screens will be available here: [Recur Screens](https://gregaspan.notion.site/Recur-1817057a1ca38072a04ddec8c7d1f068?pvs=4)
 
 
 

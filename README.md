@@ -79,7 +79,7 @@ Screens will be available here: [Recur Screens](https://gregaspan.notion.site/Re
 
 ---
 
-## 🗎 Database Schema
+## 💽 Database Schema
 
 The app uses Firebase Firestore for storing data. Below is the schema:
 

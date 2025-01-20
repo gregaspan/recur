@@ -1,4 +1,4 @@
-# 🌟 Recur
+![image](https://github.com/user-attachments/assets/a9730c41-7ed5-4836-a8f5-fd28a2c9e4e9)# 🌟 Recur
 
 Welcome to the **Recur**! This Flutter application, powered by Firebase, helps users build and maintain habits by tracking daily progress, visualizing performance over time, and integrating with their calendars for enhanced planning. 🚀
 ![recur](https://github.com/user-attachments/assets/75630c8f-190a-4226-9806-b0760b20d9ce)
@@ -73,7 +73,20 @@ Welcome to the **Recur**! This Flutter application, powered by Firebase, helps u
 | **Challenges**              | Join fun challenges to stay motivated and build consistency.                                 |
 
 
-![Simulator Screenshot - iPhone 15 Pro - 2025-01-20 at 14.00.19.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/a9f7a5f1-3709-4ef3-824d-ea000f2d11f4/74eb853c-1d52-44b8-a986-a56cfc74e126/Simulator_Screenshot_-_iPhone_15_Pro_-_2025-01-20_at_14.00.19.png)
+![image](https://github.com/user-attachments/assets/f3123e01-e849-479f-8744-7dbd8e15077d)
+![image](https://github.com/user-attachments/assets/57babec2-7cdc-4ad3-9454-b289faefb9ca)
+![image](https://github.com/user-attachments/assets/30e03e59-562d-472a-adb4-b75f9a6f26b4)
+![image](https://github.com/user-attachments/assets/9cea54df-20f0-458b-affc-a9945f9f09c9)
+![image](https://github.com/user-attachments/assets/624ac89b-62cc-45f0-ad81-e73c8e9991f2)
+![image](https://github.com/user-attachments/assets/6fbeabdf-8873-4b32-a2aa-ee295ea0c81e)
+![image](https://github.com/user-attachments/assets/99547b6d-e414-4cd4-879d-9ef8477dcf3e)
+![image](https://github.com/user-attachments/assets/d2ca3996-b88c-420b-a3c7-ff64add1bf02)
+![image](https://github.com/user-attachments/assets/165242bb-bb66-4489-944a-4a97f99b8624)
+![image](https://github.com/user-attachments/assets/b2be84a2-9281-4fc4-9eaa-4a4c93901ba9)
+![image](https://github.com/user-attachments/assets/50e31392-4d13-42a6-b9e9-93196e38ece6)
+
+
+
 ---
 
 ## 🗎 Database Schema

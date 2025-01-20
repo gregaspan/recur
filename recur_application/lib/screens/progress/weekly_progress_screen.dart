@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class WeeklyProgressScreen extends StatefulWidget {
   final String selectedFilter;
@@ -51,7 +52,19 @@ void didUpdateWidget(covariant WeeklyProgressScreen oldWidget) {
 
   Future<void> _fetchData() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('habits').get();
+      // Pridobi trenutno prijavljenega uporabnika
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      print("User is not logged in.");
+      return;
+    }
+
+    // Pridobi habite za trenutnega uporabnika iz Firestore
+    final snapshot = await FirebaseFirestore.instance
+        .collection('habits')
+        .where('userId', isEqualTo: userId) // Filtriraj po userId
+        .get();
 
       final Map<String, int> tempDailyCompleted = {};
       final Map<String, List<double>> tempWeeklyCompletion = {};

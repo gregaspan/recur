@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:recur_application/widgets/timer_picker_widget.dart';
 import 'package:recur_application/widgets/icon_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddHabitScreen extends StatefulWidget {
   final String? habitId; // Če habitId ni null, zaslon deluje v načinu urejanja
@@ -119,6 +120,14 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     return;
   }
 
+  final String? userId = FirebaseAuth.instance.currentUser?.uid; // Pridobi userId
+  if (userId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("User is not logged in!")),
+    );
+    return;
+  }
+
   DateTime now = DateTime.now();
   DateTime normalizedDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
@@ -136,6 +145,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       'icon': icon != null ? icon.codePoint : null,
       'createdAt': Timestamp.fromDate(normalizedDate),
       'progressData': {},
+      'userId': userId,
     };
 
     if (widget.habitId == null) {

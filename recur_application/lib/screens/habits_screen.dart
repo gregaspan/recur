@@ -7,6 +7,7 @@ import 'habit_detail_screen.dart';
 import 'package:recur_application/screens/progress/progress_screen.dart';
 import 'package:recur_application/screens/settings_screen.dart';
 import 'challanges_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 class HabitsScreen extends StatefulWidget {
@@ -21,7 +22,16 @@ class _HabitsScreenState extends State<HabitsScreen> {
   int currentIndex = 0; // For bottom navigation
 
   Stream<QuerySnapshot> _fetchHabits() {
-    return FirebaseFirestore.instance.collection('habits').snapshots();
+      final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+    // Če uporabnik ni prijavljen, vrnemo prazno stream
+    return Stream.empty();
+  }
+
+    return FirebaseFirestore.instance
+      .collection('habits')
+      .where('userId', isEqualTo: userId) // Filtriranje po userId
+      .snapshots();
   }
 
   void _moveWeek(int days) {

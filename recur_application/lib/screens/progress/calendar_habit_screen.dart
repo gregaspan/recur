@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CalendarProgressScreen extends StatefulWidget {
   final String selectedFilter; // Selected filter to apply
@@ -36,8 +37,19 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
 
   Future<void> _fetchHabitData(String selectedFilter) async {
   try {
-    // Pridobi vse habite iz Firestore
-    final snapshot = await FirebaseFirestore.instance.collection('habits').get();
+    // Pridobi trenutno prijavljenega uporabnika
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      print("User is not logged in.");
+      return;
+    }
+
+    // Pridobi habite za trenutnega uporabnika iz Firestore
+    final snapshot = await FirebaseFirestore.instance
+        .collection('habits')
+        .where('userId', isEqualTo: userId) // Filtriraj po userId
+        .get();
     List<Map<String, dynamic>> allHabits = snapshot.docs.map((doc) => doc.data()).toList();
 
     Map<DateTime, Map<String, bool>> habitStatuses = {}; // Sledi stanju posameznih habitov

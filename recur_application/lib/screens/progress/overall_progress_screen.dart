@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OverallProgressScreen extends StatefulWidget {
   final String selectedFilter; // Filter, ki je izbran v ProgressScreen
@@ -21,8 +22,18 @@ class _OverallProgressScreenState extends State<OverallProgressScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('habits').snapshots(),
+    // Pridobite userId prijavljenega uporabnika
+  final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+  if (userId == null) {
+    return Center(child: Text("User is not logged in."));
+  }
+
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('habits')
+        .where('userId', isEqualTo: userId) // Filtriraj habite po userId
+        .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());

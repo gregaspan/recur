@@ -3,6 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/habit_detail_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/progress/progress_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/hello_world_screen.dart';
+import 'screens/challanges_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Omogoči asinhrono inicializacijo
@@ -35,8 +38,8 @@ class MainApp extends StatelessWidget {
       routes: {
         '/': (context) => HabitsScreen(), // Domača stran
         '/progress': (context) => ProgressScreenMain(), // Progress zaslon
-        '/challenges': (context) => Placeholder(), // Challenges Screen Placeholder
-        '/settings': (context) => Placeholder(),
+        '/challenges': (context) => ChallengesScreen(), // Challenges Screen Placeholder
+        '/settings': (context) => SettingsPage(),
       },
     );
   }

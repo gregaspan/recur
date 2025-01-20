@@ -16,6 +16,14 @@ dependencies:
   firebase_auth: ^4.19.3
   cloud_firestore: ^4.15.4
   uuid: ^4.2.1
+  confetti: ^0.7.0
+  shared_preferences: ^2.1.0
+  flutter_local_notifications: ^14.0.0
+  connectivity_plus: ^4.0.0
+  internet_connection_checker: ^1.0.0
+  fluttertoast: ^8.0.8
+  provider: ^6.0.0
+
 
 dev_dependencies:
   flutter_test:

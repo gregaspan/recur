@@ -5,6 +5,9 @@ import 'custom_floating_button.dart';
 import 'add_habit_screen.dart';
 import 'habit_detail_screen.dart';
 import 'package:recur_application/screens/progress/progress_screen.dart';
+import 'package:recur_application/screens/settings_screen.dart';
+import 'challanges_screen.dart';
+
 
 class HabitsScreen extends StatefulWidget {
   @override
@@ -44,12 +47,12 @@ class _HabitsScreenState extends State<HabitsScreen> {
     } else if (index == 2) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder for Challenges
+        MaterialPageRoute(builder: (context) => ChallengesScreen()), // Placeholder for Challenges
       );
     } else if (index == 3) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => Placeholder()), // Placeholder for Settings
+        MaterialPageRoute(builder: (context) => SettingsPage()), // Placeholder for Settings
       );
     }
   }

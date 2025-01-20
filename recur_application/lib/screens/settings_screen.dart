@@ -1,6 +1,7 @@
-// settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
@@ -12,17 +13,15 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Example settings states
   bool _wifi = true;
   bool _bluetooth = false;
   bool _notifications = true;
-  bool _darkMode = false;
 
-  // Firebase Auth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Listen to authentication state
   late final Stream<User?> _authStateChanges;
+
+  final String calendarSubscriptionUrl = 'https://calendar.lafayette.edu/category/24/events.ics';
 
   @override
   void initState() {
@@ -36,21 +35,18 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: const Text('Settings'),
         centerTitle: true,
-        automaticallyImplyLeading: false, // Removes the back button
+        automaticallyImplyLeading: false, 
       ),
       body: StreamBuilder<User?>(
         stream: _authStateChanges,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // Show a loading indicator while checking auth state
             return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasData) {
-            // User is logged in
             return _buildLoggedInSettings(snapshot.data);
           } else {
-            // User is not logged in
             return _buildLoggedOutSettings();
           }
         },
@@ -58,11 +54,31 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Builds the settings view for logged-in users
+  Future<void> _subscribeToCalendar(BuildContext context) async {
+    final Uri url = Uri.parse(calendarSubscriptionUrl);
+
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch the calendar subscription URL.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Calendar subscription opened. Please check your calendar app.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error launching URL: $e')),
+      );
+    }
+  }
+
   Widget _buildLoggedInSettings(User? user) {
     return ListView(
       children: [
-        // Account Section
         _buildSectionHeader('Account'),
         ListTile(
           leading: const Icon(Icons.person),
@@ -88,7 +104,6 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: _logout,
         ),
 
-        // Connectivity Section
         _buildSectionHeader('Connectivity'),
         SwitchListTile(
           secondary: const Icon(Icons.wifi),
@@ -111,7 +126,6 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         ),
 
-        // Notifications Section
         _buildSectionHeader('Notifications'),
         SwitchListTile(
           secondary: const Icon(Icons.notifications),
@@ -123,16 +137,13 @@ class _SettingsPageState extends State<SettingsPage> {
             });
           },
         ),
-        SwitchListTile(
-          secondary: const Icon(Icons.brightness_6),
-          title: const Text('Dark Mode'),
-          value: _darkMode,
-          onChanged: (bool value) {
-            setState(() {
-              _darkMode = value;
-              // Implement theme switching logic here if needed
-            });
-          },
+
+        _buildSectionHeader('Calendar'),
+        ListTile(
+          leading: const Icon(Icons.calendar_today),
+          title: const Text('Subscribe to Calendar'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _subscribeToCalendar(context),
         ),
 
         // About Section
@@ -157,11 +168,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Builds the settings view for logged-out users
   Widget _buildLoggedOutSettings() {
     return ListView(
       children: [
-        // Authentication Section
         _buildSectionHeader('Authentication'),
         ListTile(
           leading: const Icon(Icons.login),
@@ -186,7 +195,6 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         ),
 
-        // Connectivity Section
         _buildSectionHeader('Connectivity'),
         SwitchListTile(
           secondary: const Icon(Icons.wifi),
@@ -221,19 +229,15 @@ class _SettingsPageState extends State<SettingsPage> {
             });
           },
         ),
-        SwitchListTile(
-          secondary: const Icon(Icons.brightness_6),
-          title: const Text('Dark Mode'),
-          value: _darkMode,
-          onChanged: (bool value) {
-            setState(() {
-              _darkMode = value;
-              // Implement theme switching logic here if needed
-            });
-          },
+
+        _buildSectionHeader('Calendar'),
+        ListTile(
+          leading: const Icon(Icons.calendar_today),
+          title: const Text('Subscribe to Calendar'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _subscribeToCalendar(context),
         ),
 
-        // About Section
         _buildSectionHeader('About'),
         ListTile(
           leading: const Icon(Icons.info),
@@ -255,7 +259,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Handles logout functionality
   Future<void> _logout() async {
     try {
       await _auth.signOut();
@@ -269,7 +272,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// Builds a section header with the given [title].
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
@@ -286,8 +288,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// Handles navigation to different settings pages.
   void _navigateTo(BuildContext context, String pageName) {
-    // Placeholder for navigation logic
-    // Replace with actual navigation code as needed
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

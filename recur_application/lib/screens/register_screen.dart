@@ -1,4 +1,3 @@
-// register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -10,22 +9,17 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Controllers for input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  // Firebase Auth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Loading state
   bool _isLoading = false;
 
-  // Form key
   final _formKey = GlobalKey<FormState>();
 
-  // Dispose controllers
   @override
   void dispose() {
     _emailController.dispose();
@@ -34,7 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  /// Handles user registration
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -51,7 +44,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Create user with email and password
       await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -82,7 +74,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  /// Builds the registration form
   @override
   Widget build(BuildContext context) {
     return Scaffold(

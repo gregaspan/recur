@@ -23,12 +23,22 @@ dependencies:
   internet_connection_checker: ^1.0.0
   fluttertoast: ^8.0.8
   provider: ^6.0.0
+  url_launcher: ^6.1.7
+
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: "^0.10.0"
+
 
 flutter:
   uses-material-design: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/recur.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21

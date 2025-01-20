@@ -1,4 +1,3 @@
-// login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -10,20 +9,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controllers for input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Firebase Auth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Loading state
   bool _isLoading = false;
 
-  // Form key
   final _formKey = GlobalKey<FormState>();
 
-  // Dispose controllers
   @override
   void dispose() {
     _emailController.dispose();
@@ -40,13 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Sign in with email and password
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Navigate back to settings
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
@@ -60,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text(message)),
       );
     } catch (e) {
-      // General error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -71,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Builds the login form
   @override
   Widget build(BuildContext context) {
     return Scaffold(

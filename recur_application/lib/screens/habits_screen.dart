@@ -101,48 +101,58 @@ class _HabitsScreenState extends State<HabitsScreen> {
   }
 
   Widget _buildDateSelector(List<DateTime> weekDates) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      color: Theme.of(context).dividerColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-              icon: Icon(Icons.arrow_left, size: 30),
-              onPressed: () => _moveWeek(-7)),
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: weekDates.map((date) {
-                final isSelected = _isToday(date);
-                return GestureDetector(
-                  onTap: () => setState(() => today = date),
-                  child: Column(
-                    children: [
-                      Text(_getWeekdayName(date.weekday),
-                          style: TextStyle(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).textTheme.bodyMedium?.color,
-                              fontWeight: FontWeight.bold)),
-                      Text("${date.day}",
-                          style: TextStyle(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).textTheme.bodyMedium?.color)),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    color: Colors.grey[100],
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(icon: Icon(Icons.arrow_left, size: 30), onPressed: () => _moveWeek(-7)),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: weekDates.map((date) {
+              final isSelected = _isToday(date);
+              final isFutureDate = date.isAfter(DateTime.now());
+
+              return GestureDetector(
+                onTap: isFutureDate
+                    ? null // Prepreči klik, če je datum v prihodnosti
+                    : () => setState(() => today = date),
+                child: Column(
+                  children: [
+                    Text(
+                      _getWeekdayName(date.weekday),
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.blue
+                            : isFutureDate
+                                ? Colors.grey // Prikaži onemogočen datum kot siv
+                                : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "${date.day}",
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.blue
+                            : isFutureDate
+                                ? Colors.grey // Prikaži onemogočen datum kot siv
+                                : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
-          IconButton(
-              icon: Icon(Icons.arrow_right, size: 30),
-              onPressed: () => _moveWeek(7)),
-        ],
-      ),
-    );
-  }
+        ),
+        IconButton(icon: Icon(Icons.arrow_right, size: 30), onPressed: () => _moveWeek(7)),
+      ],
+    ),
+  );
+}
 
   Widget _buildFilters() {
     const filters = ["Daily", "Weekly", "Monthly", "Yearly"];

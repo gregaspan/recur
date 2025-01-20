@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:recur_application/widgets/timer_picker_widget.dart';
 import 'add_habit_screen.dart';
+import 'package:uuid/uuid.dart';
 
 class HabitDetailScreen extends StatefulWidget {
   final String habitId;
@@ -23,6 +24,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   bool isLoading = true;
   bool isCustomFieldVisible = false; 
   double? localProgress; // Shranjuje trenutni napredek
+  final Uuid uuid = Uuid();
 
   @override
   void initState() {
@@ -290,6 +292,7 @@ int calculateStreak(Map<String, dynamic> periods, String frequency, DateTime tod
 
     // Dodamo nov vnos
     intakes.add({
+      'id': uuid.v4(),
       'time': Timestamp.now(),
       'value': intake,
     });

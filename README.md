@@ -1,8 +1,7 @@
-![image](https://github.com/user-attachments/assets/a9730c41-7ed5-4836-a8f5-fd28a2c9e4e9)# 🌟 Recur
+🌟 Recur
 
 Welcome to the **Recur**! This Flutter application, powered by Firebase, helps users build and maintain habits by tracking daily progress, visualizing performance over time, and integrating with their calendars for enhanced planning. 🚀
-![recur](https://github.com/user-attachments/assets/75630c8f-190a-4226-9806-b0760b20d9ce)
-
+<img src="https://github.com/user-attachments/assets/75630c8f-190a-4226-9806-b0760b20d9ce" alt="recur" width="100">
 ---
 
 ## 📚 Table of Contents
@@ -74,6 +73,7 @@ Welcome to the **Recur**! This Flutter application, powered by Firebase, helps u
 
 
 ![image](https://github.com/user-attachments/assets/f3123e01-e849-479f-8744-7dbd8e15077d)
+![image](https://github.com/user-attachments/assets/a9730c41-7ed5-4836-a8f5-fd28a2c9e4e9)# 
 ![image](https://github.com/user-attachments/assets/57babec2-7cdc-4ad3-9454-b289faefb9ca)
 ![image](https://github.com/user-attachments/assets/30e03e59-562d-472a-adb4-b75f9a6f26b4)
 ![image](https://github.com/user-attachments/assets/9cea54df-20f0-458b-affc-a9945f9f09c9)

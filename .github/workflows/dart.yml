@@ -25,21 +25,18 @@ jobs:
 
       - name: Install dependencies
         run: dart pub get
-        working-directory: /recur_application
+        working-directory: ./recur_application
 
       # Uncomment this step to verify the use of 'dart format' on each commit.
       # - name: Verify formatting
       #   run: dart format --output=none --set-exit-if-changed .
-      #   working-directory: /directory
+      #   working-directory: ./recur_application
 
-      # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
-        working-directory: /directory
+        working-directory: ./recur_application
 
-      # Your project will need to have tests in test/ and a dependency on
-      # package:test for this step to succeed. Note that Flutter projects will
-      # want to change this to 'flutter test'.
+      # Run tests
       - name: Run tests
         run: dart test
-        working-directory: /directory
+        working-directory: ./recur_application

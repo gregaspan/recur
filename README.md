@@ -83,6 +83,9 @@ Screens will be available here: [Recur Screens](https://gregaspan.notion.site/Re
 
 The app uses Firebase Firestore for storing data. Below is the schema:
 
+![image](https://github.com/user-attachments/assets/429805ec-b3aa-4f1d-b4c2-63977023ddb4)
+
+
 - **Users**:  
   - `id`: Unique user ID  
   - `name`: User's name  
@@ -96,7 +99,6 @@ The app uses Firebase Firestore for storing data. Below is the schema:
   - `end_date`: End date of the habit (if applicable)  
   - `is_active`: Boolean indicating if the habit is currently active  
   - `reminder_time`: Time for habit reminders  
-  - `google_calendar_event_id`: Associated event ID for Google Calendar  
 
 - **Logs**:  
   - `id`: Unique log ID  
@@ -104,7 +106,9 @@ The app uses Firebase Firestore for storing data. Below is the schema:
   - `log_date`: Date of the habit log  
   - `status`: Status of the habit on the logged date  
 
-![Database Schema Diagram](link_to_schema_image)
+
+![image](https://github.com/user-attachments/assets/6f14a169-694d-4f01-b66b-79391808fee5)
+
 
 ---
 

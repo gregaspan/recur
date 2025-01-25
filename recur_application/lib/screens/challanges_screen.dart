@@ -7,11 +7,13 @@ import 'dart:convert';
 import 'dart:math';
 
 class Challenge {
+  final String id;
   final String title;
   final String imageUrl;
   bool isCompleted;
 
   Challenge({
+    required this.id,
     required this.title,
     required this.imageUrl,
     this.isCompleted = false,
@@ -50,6 +52,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     for (var title in initialTitles) {
       String imageUrl = await _fetchImageFromUnsplash(title);
       loadedChallenges.add(Challenge(
+        id: _random.nextInt(1000000).toString(),
         title: title,
         imageUrl: imageUrl,
       ));
@@ -89,6 +92,29 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     _confettiController.play();
   }
 
+  void _deleteChallenge(int index) {
+    final deletedChallenge = challenges[index];
+    final deletedIndex = index;
+
+    setState(() {
+      challenges.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Challenge deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            setState(() {
+              challenges.insert(deletedIndex, deletedChallenge);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _addNewChallenge() async {
     final String? newTitle = await showDialog<String>(
       context: context,
@@ -99,6 +125,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       String imageUrl = await _fetchImageFromUnsplash(newTitle);
       setState(() {
         challenges.add(Challenge(
+          id: _random.nextInt(1000000).toString(),
           title: newTitle,
           imageUrl: imageUrl,
         ));
@@ -139,52 +166,63 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   itemCount: challenges.length,
                   itemBuilder: (context, index) {
                     final challenge = challenges[index];
-                    return Card(
-                      elevation: 3,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    return Dismissible(
+                      key: Key(challenge.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        color: Colors.red,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 16,
+                      onDismissed: (direction) => _deleteChallenge(index),
+                      child: Card(
+                        elevation: 3,
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image.network(
-                            challenge.imageUrl,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.image_not_supported),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
                           ),
-                        ),
-                        title: Text(
-                          challenge.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            decoration: challenge.isCompleted
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                          ),
-                        ),
-                        trailing: ElevatedButton(
-                          onPressed: challenge.isCompleted
-                              ? null
-                              : () => _onChallengeDone(index),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: challenge.isCompleted
-                                ? Colors.green
-                                : Theme.of(context).primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.network(
+                              challenge.imageUrl,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.image_not_supported),
                             ),
                           ),
-                          child: Text(
-                            challenge.isCompleted ? 'Done!' : 'Done',
-                            style: const TextStyle(color: Colors.white),
+                          title: Text(
+                            challenge.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              decoration: challenge.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: challenge.isCompleted
+                                ? null
+                                : () => _onChallengeDone(index),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: challenge.isCompleted
+                                  ? Colors.green
+                                  : Theme.of(context).primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: Text(
+                              challenge.isCompleted ? 'Done!' : 'Done',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
@@ -210,6 +248,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 2,
         onTap: (index) {
+          // Handle navigation here
         },
       ),
     );

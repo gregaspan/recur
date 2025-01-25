@@ -23,18 +23,19 @@ jobs:
           flutter-version: '3.22.2'
           channel: 'stable'
 
-      #3 Install CocoaPods dependencies
-      - name: Install Pods
-        run: |
-          cd ./recur_application/ios
-          pod install
-          
-      #4 Install Flutter dependencies
+      #3 Install Flutter dependencies FIRST
       - name: Install Dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          flutter precache
         working-directory: ./recur_application
 
-      #5 Build for iOS (without code signing)
+      #4 Install CocoaPods dependencies
+      - name: Install Pods
+        run: pod install
+        working-directory: ./recur_application/ios
+
+      #5 Build for iOS
       - name: Build iOS
         run: flutter build ios --no-codesign
         working-directory: ./recur_application

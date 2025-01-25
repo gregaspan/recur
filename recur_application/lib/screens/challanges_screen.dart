@@ -33,6 +33,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   final List<Challenge> challenges = [];
   final Random _random = Random();
   bool _isLoading = true;
+  int currentIndex = 2;
+  final PageController pageController = PageController(initialPage: 0);
 
   @override
   void initState() {
@@ -146,11 +148,35 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     );
   }
 
+  void navigateToPage(int navBarIndex) {
+    if (navBarIndex != currentIndex) {
+      setState(() {
+        currentIndex = navBarIndex;
+      });
+      if (navBarIndex == 0) {
+        // Navigate to Home
+        Navigator.pushReplacementNamed(context, '/');
+      } else if (navBarIndex == 1) {
+        // Navigate to Progress (reset to first page)
+        Navigator.pushReplacementNamed(context, '/progress');
+      } else if (navBarIndex == 2) {
+        // Navigate to Challenges
+        pageController.jumpToPage(0);
+      } else if (navBarIndex == 3) {
+        // Navigate to Settings
+        Navigator.pushReplacementNamed(context, '/settings');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Challenges'),
+        title: const Text('Challenges',
+          style: TextStyle(
+                    fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewChallenge,
@@ -246,9 +272,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               ],
             ),
       bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: 2,
+        currentIndex: currentIndex,
         onTap: (index) {
-          // Handle navigation here
+          navigateToPage(index);
         },
       ),
     );

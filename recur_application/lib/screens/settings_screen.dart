@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:recur_application/screens/bottom_navigation_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
@@ -16,6 +17,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _wifi = true;
   bool _bluetooth = false;
   bool _notifications = true;
+  int currentIndex = 3;
+  final PageController pageController = PageController(initialPage: 0);
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -29,11 +32,34 @@ class _SettingsPageState extends State<SettingsPage> {
     _authStateChanges = _auth.authStateChanges();
   }
 
+  void navigateToPage(int navBarIndex) {
+    if (navBarIndex != currentIndex) {
+      setState(() {
+        currentIndex = navBarIndex;
+      });
+      if (navBarIndex == 0) {
+        // Navigate to Home
+        Navigator.pushReplacementNamed(context, '/');
+      } else if (navBarIndex == 1) {
+        // Navigate to Progress (reset to first page)
+        Navigator.pushReplacementNamed(context, '/progress');
+      } else if (navBarIndex == 2) {
+        // Navigate to Challenges
+        Navigator.pushReplacementNamed(context, '/challenges');
+      } else if (navBarIndex == 3) {
+        // Navigate to Settings
+        pageController.jumpToPage(0);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Settings',
+          style: TextStyle(
+                    fontWeight: FontWeight.bold)),
         centerTitle: true,
         automaticallyImplyLeading: false, 
       ),
@@ -49,6 +75,12 @@ class _SettingsPageState extends State<SettingsPage> {
           } else {
             return _buildLoggedOutSettings();
           }
+        },
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: (index) {
+          navigateToPage(index);
         },
       ),
     );

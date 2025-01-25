@@ -78,6 +78,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 style: TextStyle(
                     fontWeight: FontWeight.bold)),
             centerTitle: true,
+            automaticallyImplyLeading: false,
           ),
           body: Column(
             children: [
@@ -125,7 +126,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                       _getWeekdayName(date.weekday),
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.blue
+                            ? Colors.deepPurpleAccent
                             : isFutureDate
                                 ? Colors.grey // Prikaži onemogočen datum kot siv
                                 : Colors.black,
@@ -136,7 +137,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                       "${date.day}",
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.blue
+                            ? Colors.deepPurpleAccent
                             : isFutureDate
                                 ? Colors.grey // Prikaži onemogočen datum kot siv
                                 : Colors.black,
@@ -164,7 +165,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: isSelected
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                : Theme.of(context).colorScheme.primaryFixed,
           ),
           onPressed: () => setState(() => selectedFilter = filter),
           child: Text(filter,
@@ -323,16 +324,16 @@ class _HabitsScreenState extends State<HabitsScreen> {
         leading: Icon(
           _getIconFromCodePoint(data['icon']),
           color: isCompleted
-              ? Theme.of(context).colorScheme.primary
+              ? Colors.green
               : isFailed
                   ? Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.secondary,
+                  : Theme.of(context).colorScheme.primary,
         ),
         title: Text(data['name'] ?? "Unnamed Habit",
             style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("Goal: ${data['goal'] ?? ''}"),
         trailing: isCompleted
-            ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+            ? Icon(Icons.check, color: Colors.green,)
             : isFailed
                 ? Icon(Icons.close, color: Theme.of(context).colorScheme.error)
                 : SizedBox(
@@ -343,8 +344,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
                           child: LinearProgressIndicator(
                             value: (data['progress'] ?? 0.0).clamp(0.0, 1.0),
                             backgroundColor:
-                                Theme.of(context).dividerColor,
-                            color: Theme.of(context).colorScheme.secondary,
+                                Theme.of(context).colorScheme.primaryFixed,
+                            color: Theme.of(context).colorScheme.primary,
                             minHeight: 6,
                           ),
                         ),

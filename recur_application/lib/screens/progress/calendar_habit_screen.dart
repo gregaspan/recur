@@ -156,6 +156,7 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
       appBar: AppBar(
         title: Text("Habit Tracking"),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -199,7 +200,7 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
                 margin: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
                   color: isCompleted == true
-                      ? colorScheme.primary
+                      ? Colors.green
                       : isCompleted == false
                           ? colorScheme.error
                           : Colors.transparent,
@@ -228,6 +229,14 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
           ),
           decoration: BoxDecoration(
             color: colorScheme.primary,
+          ),
+          leftChevronIcon: Icon(
+            Icons.chevron_left,
+            color: colorScheme.onPrimary,
+          ),
+          rightChevronIcon: Icon(
+            Icons.chevron_right,
+            color: colorScheme.onPrimary,
           ),
         ),
         calendarStyle: CalendarStyle(
@@ -301,7 +310,7 @@ class _CalendarProgressScreenState extends State<CalendarProgressScreen> {
           ),
           SizedBox(height: 12),
           if (completedHabits.isNotEmpty) ...[
-            _buildHabitSection("Completed Habits", completedHabits, colorScheme.primary),
+            _buildHabitSection("Completed Habits", completedHabits, Colors.green),
           ],
           if (failedHabits.isNotEmpty) ...[
             _buildHabitSection("Failed Habits", failedHabits, colorScheme.error),

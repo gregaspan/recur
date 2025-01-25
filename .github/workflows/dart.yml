@@ -34,8 +34,3 @@ jobs:
       - name: Install Pods
         run: pod install
         working-directory: ./recur_application/ios
-
-      #5 Build for iOS
-      - name: Build iOS
-        run: flutter build ios --no-codesign
-        working-directory: ./recur_application

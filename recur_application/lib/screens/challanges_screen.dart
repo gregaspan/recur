@@ -67,7 +67,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   Future<String> _fetchImageFromUnsplash(String query) async {
-    const String accessKey = 'AOu9haU-42iscuMwI0-7xh1eoHt-4VVRoJtOJcWSXjk';
+    const String accessKey = "no-thanks";
     try {
       final response = await http.get(
         Uri.parse('https://api.unsplash.com/search/photos?query=$query&per_page=20'),
